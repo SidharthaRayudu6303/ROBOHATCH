@@ -130,10 +130,10 @@ export default function Categories() {
   }
 
   return (
-    <section className="py-20 bg-gradient-to-br from-amber-50 via-white to-orange-50" id="categories">
-      <div className="max-w-[1200px] mx-auto px-5">
-        <h2 className="text-4xl font-bold text-dark-brown text-center mb-16">Browse Categories</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+    <section className="py-12 sm:py-16 md:py-20 bg-gradient-to-br from-amber-50 via-white to-orange-50" id="categories">
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-5">
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-dark-brown text-center mb-8 sm:mb-12 md:mb-16">Browse Categories</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 md:gap-8">{
           {categories.map((category, index) => {
             const products = getCategoryProducts(category.key).filter(p => !removedProducts.includes(p.id))
             

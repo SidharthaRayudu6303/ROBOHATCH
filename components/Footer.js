@@ -19,15 +19,15 @@ export default function Footer() {
   }
 
   return (
-    <footer className="bg-dark-brown text-white py-20">
-      <div className="max-w-[1200px] mx-auto px-5">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
-          <div className="space-y-4">
-            <div className="flex items-center gap-3 mb-4">
-              <Image src="/logo.png" alt="ROBOHATCH Logo" width={40} height={40} />
-              <h3 className="text-2xl font-bold text-primary-orange">ROBOHATCH</h3>
+    <footer className="bg-dark-brown text-white py-12 sm:py-16 md:py-20">
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 mb-8 sm:mb-10 md:mb-12">
+          <div className="space-y-3 sm:space-y-4">
+            <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+              <Image src="/logo.png" alt="ROBOHATCH Logo" width={35} height={35} className="sm:w-[40px] sm:h-[40px]" />
+              <h3 className="text-xl sm:text-2xl font-bold text-primary-orange">ROBOHATCH</h3>
             </div>
-            <p className="text-gray-300 text-sm leading-relaxed">Bringing your ideas to life through innovative 3D printing technology.</p>
+            <p className="text-gray-300 text-xs sm:text-sm leading-relaxed">Bringing your ideas to life through innovative 3D printing technology.</p>
             <div className="flex gap-4">
               <Link href="#" className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-primary-orange transition-colors duration-300"><i className="fab fa-facebook"></i></Link>
               <Link href="#" className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-primary-orange transition-colors duration-300"><i className="fab fa-instagram"></i></Link>

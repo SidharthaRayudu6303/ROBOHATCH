@@ -2,11 +2,11 @@ import Link from 'next/link';
 
 export default function Services() {
   return (
-    <section className="py-20 bg-gradient-to-b from-white via-orange-50 to-white" id="services">
-      <div className="max-w-[1200px] mx-auto px-5">
-        <h2 className="text-4xl font-bold text-dark-brown text-center mb-16">Our Services</h2>
+    <section className="py-12 sm:py-16 md:py-20 bg-gradient-to-b from-white via-orange-50 to-white" id="services">
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-5">
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-dark-brown text-center mb-8 sm:mb-12 md:mb-16">Our Services</h2>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
           {/* Custom 3D Printing Card */}
           <Link href="/custom-printing" className="bg-gradient-to-br from-white to-orange-50/40 rounded-[20px] p-8 shadow-[0_10px_30px_rgba(242,92,5,0.1)] transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_15px_40px_rgba(242,92,5,0.2)] hover:to-orange-100/50 block group">
             <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary-orange to-hover-orange flex items-center justify-center text-white text-4xl mb-6 group-hover:scale-110 transition-transform duration-300">

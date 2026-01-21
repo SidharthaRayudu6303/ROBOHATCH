@@ -21,12 +21,12 @@ export default function Products() {
   }
 
   return (
-    <section className="py-20 bg-gradient-to-br from-orange-50 via-white to-orange-50" id="products">
-      <div className="max-w-[1200px] mx-auto px-5">
-        <h2 className="text-4xl font-bold text-dark-brown text-center mb-4 opacity-0 animate-[slideUp_0.6s_ease-out_forwards]">Featured Products</h2>
-        <p className="text-gray-600 text-center mb-12 opacity-0 animate-[slideUp_0.6s_ease-out_forwards] [animation-delay:100ms]">Handpicked bestsellers and new arrivals</p>
+    <section className="py-12 sm:py-16 md:py-20 bg-gradient-to-br from-orange-50 via-white to-orange-50" id="products">
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-5">
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-dark-brown text-center mb-3 sm:mb-4 opacity-0 animate-[slideUp_0.6s_ease-out_forwards]">Featured Products</h2>
+        <p className="text-sm sm:text-base text-gray-600 text-center mb-8 sm:mb-10 md:mb-12 opacity-0 animate-[slideUp_0.6s_ease-out_forwards] [animation-delay:100ms]">Handpicked bestsellers and new arrivals</p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 md:gap-8">
           {products.map((product, index) => (
             <div 
               key={product.name} 

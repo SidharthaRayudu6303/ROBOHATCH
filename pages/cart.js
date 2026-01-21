@@ -62,40 +62,40 @@ export default function Cart() {
       
       <Navbar />
       
-      <div className="min-h-screen bg-gradient-to-br from-orange-50/40 via-white to-amber-50/30 py-12">
-        <div className="max-w-[1200px] mx-auto px-5">
-          <div className="mb-12">
-            <h1 className="text-4xl font-bold text-dark-brown mb-2">Shopping Cart</h1>
-            <p className="text-gray-600">{cartItems.length} {cartItems.length === 1 ? 'item' : 'items'} in your cart</p>
+      <div className="min-h-screen bg-gradient-to-br from-orange-50/40 via-white to-amber-50/30 py-6 sm:py-8 md:py-12">
+        <div className="max-w-[1200px] mx-auto px-4 sm:px-5">
+          <div className="mb-6 sm:mb-8 md:mb-12">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-dark-brown mb-2">Shopping Cart</h1>
+            <p className="text-sm sm:text-base text-gray-600">{cartItems.length} {cartItems.length === 1 ? 'item' : 'items'} in your cart</p>
           </div>
 
           {cartItems.length === 0 ? (
-            <div className="bg-white rounded-[20px] p-16 text-center shadow-[0_10px_30px_rgba(0,0,0,0.08)]">
-              <i className="fas fa-shopping-cart text-7xl text-gray-300 mb-6"></i>
-              <h2 className="text-2xl font-bold text-dark-brown mb-3">Your cart is empty</h2>
-              <p className="text-gray-600 mb-8">Add some amazing 3D printed products to get started!</p>
-              <Link href="/" className="inline-flex items-center gap-2 bg-primary-orange text-white px-8 py-4 rounded-full font-semibold text-lg shadow-[0_4px_15px_rgba(242,92,5,0.3)] hover:bg-hover-orange transition-all duration-300 hover:-translate-y-0.5">
+            <div className="bg-white rounded-[20px] p-8 sm:p-12 md:p-16 text-center shadow-[0_10px_30px_rgba(0,0,0,0.08)]">
+              <i className="fas fa-shopping-cart text-5xl sm:text-6xl md:text-7xl text-gray-300 mb-4 sm:mb-6"></i>
+              <h2 className="text-xl sm:text-2xl font-bold text-dark-brown mb-2 sm:mb-3">Your cart is empty</h2>
+              <p className="text-sm sm:text-base text-gray-600 mb-6 sm:mb-8">Add some amazing 3D printed products to get started!</p>
+              <Link href="/" className="inline-flex items-center gap-2 bg-primary-orange text-white px-6 sm:px-8 py-3 sm:py-4 rounded-full font-semibold text-base sm:text-lg shadow-[0_4px_15px_rgba(242,92,5,0.3)] hover:bg-hover-orange transition-all duration-300 hover:-translate-y-0.5">
                 <i className="fas fa-arrow-left"></i>
                 Continue Shopping
               </Link>
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2 space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
+              <div className="lg:col-span-2 space-y-3 sm:space-y-4">
                 {cartItems.map(item => (
-                  <div key={item.id} className="bg-white rounded-[20px] p-6 shadow-[0_4px_15px_rgba(0,0,0,0.08)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.12)] transition-all duration-300">
-                    <div className="flex gap-6">
-                      <div className="flex-shrink-0">
-                        <div className="w-32 h-32 bg-gradient-to-br from-primary-orange to-hover-orange rounded-xl flex items-center justify-center text-white text-5xl">
+                  <div key={item.id} className="bg-white rounded-[20px] p-4 sm:p-6 shadow-[0_4px_15px_rgba(0,0,0,0.08)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.12)] transition-all duration-300">
+                    <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
+                      <div className="flex-shrink-0 self-center sm:self-start">
+                        <div className="w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-br from-primary-orange to-hover-orange rounded-xl flex items-center justify-center text-white text-4xl sm:text-5xl">
                           <i className={`fas ${item.icon || 'fa-box'}`}></i>
                         </div>
                       </div>
-                      <div className="flex-1 flex flex-col justify-between">
+                      <div className="flex-1 flex flex-col justify-between min-w-0">
                         <div>
-                          <h3 className="text-xl font-bold text-dark-brown mb-2">{item.name}</h3>
-                          <p className="text-gray-600 text-sm mb-2">{item.description}</p>
-                          <div className="h-0.5 w-16 bg-gradient-to-r from-primary-orange to-transparent my-2"></div>
-                          <p className="text-sm text-gray-600">
+                          <h3 className="text-lg sm:text-xl font-bold text-dark-brown mb-2 truncate">{item.name}</h3>
+                          <p className="text-gray-600 text-xs sm:text-sm mb-2 line-clamp-2">{item.description}</p>
+                          <div className="h-0.5 w-12 sm:w-16 bg-gradient-to-r from-primary-orange to-transparent my-2"></div>
+                          <p className="text-xs sm:text-sm text-gray-600">
                             <i className="fas fa-truck text-primary-orange mr-1"></i>
                             Delivery: <span className="font-semibold text-dark-brown">₹100.00</span>
                           </p>

@@ -159,11 +159,11 @@ export default function Checkout() {
       
       <Navbar />
       
-      <div className="min-h-screen bg-gradient-to-br from-orange-50/40 via-white to-amber-50/30 py-12">
-        <div className="max-w-[1400px] mx-auto px-5">
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold text-dark-brown mb-2">Checkout</h1>
-            <div className="flex items-center gap-2 text-sm text-gray-600">
+      <div className="min-h-screen bg-gradient-to-br from-orange-50/40 via-white to-amber-50/30 py-6 sm:py-8 md:py-12">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-5">
+          <div className="mb-6 sm:mb-8">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-dark-brown mb-2">Checkout</h1>
+            <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
               <Link href="/cart" className="hover:text-primary-orange transition-colors">Cart</Link>
               <i className="fas fa-chevron-right text-xs"></i>
               <span className="text-primary-orange font-semibold">Checkout</span>
@@ -171,18 +171,18 @@ export default function Checkout() {
           </div>
 
           <form onSubmit={handleSubmit}>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
               {/* Left Column - Forms */}
               <div className="lg:col-span-2 space-y-6">
                 {/* Personal Information */}
-                <div className="bg-white rounded-[20px] p-8 shadow-[0_4px_15px_rgba(0,0,0,0.08)]">
-                  <h2 className="text-2xl font-bold text-dark-brown mb-6 flex items-center gap-3">
-                    <div className="w-10 h-10 bg-primary-orange text-white rounded-full flex items-center justify-center">
+                <div className="bg-white rounded-[20px] p-5 sm:p-6 md:p-8 shadow-[0_4px_15px_rgba(0,0,0,0.08)]">
+                  <h2 className="text-xl sm:text-2xl font-bold text-dark-brown mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary-orange text-white rounded-full flex items-center justify-center text-sm sm:text-base">
                       <span className="font-bold">1</span>
                     </div>
-                    Personal Information
+                    <span className="text-base sm:text-xl md:text-2xl">Personal Information</span>
                   </h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">First Name *</label>
                       <input
@@ -235,14 +235,14 @@ export default function Checkout() {
                 </div>
 
                 {/* Shipping Address */}
-                <div className="bg-white rounded-[20px] p-8 shadow-[0_4px_15px_rgba(0,0,0,0.08)]">
-                  <h2 className="text-2xl font-bold text-dark-brown mb-6 flex items-center gap-3">
-                    <div className="w-10 h-10 bg-primary-orange text-white rounded-full flex items-center justify-center">
+                <div className="bg-white rounded-[20px] p-5 sm:p-6 md:p-8 shadow-[0_4px_15px_rgba(0,0,0,0.08)]">
+                  <h2 className="text-xl sm:text-2xl font-bold text-dark-brown mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary-orange text-white rounded-full flex items-center justify-center text-sm sm:text-base">
                       <span className="font-bold">2</span>
                     </div>
-                    Shipping Address
+                    <span className="text-base sm:text-xl md:text-2xl">Shipping Address</span>
                   </h2>
-                  <div className="space-y-6">
+                  <div className="space-y-4 sm:space-y-6">
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">Street Address *</label>
                       <input
@@ -310,15 +310,15 @@ export default function Checkout() {
                 </div>
 
                 {/* Payment Method */}
-                <div className="bg-white rounded-[20px] p-8 shadow-[0_4px_15px_rgba(0,0,0,0.08)]">
-                  <h2 className="text-2xl font-bold text-dark-brown mb-6 flex items-center gap-3">
-                    <div className="w-10 h-10 bg-primary-orange text-white rounded-full flex items-center justify-center">
+                <div className="bg-white rounded-[20px] p-5 sm:p-6 md:p-8 shadow-[0_4px_15px_rgba(0,0,0,0.08)]">
+                  <h2 className="text-xl sm:text-2xl font-bold text-dark-brown mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary-orange text-white rounded-full flex items-center justify-center text-sm sm:text-base">
                       <span className="font-bold">3</span>
                     </div>
-                    Payment Method
+                    <span className="text-base sm:text-xl md:text-2xl">Payment Method</span>
                   </h2>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
                     <button
                       type="button"
                       onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'card' }))}
@@ -427,8 +427,8 @@ export default function Checkout() {
                 </div>
 
                 {/* Order Notes */}
-                <div className="bg-white rounded-[20px] p-8 shadow-[0_4px_15px_rgba(0,0,0,0.08)]">
-                  <h3 className="text-xl font-bold text-dark-brown mb-4">Order Notes (Optional)</h3>
+                <div className="bg-white rounded-[20px] p-5 sm:p-6 md:p-8 shadow-[0_4px_15px_rgba(0,0,0,0.08)]">
+                  <h3 className="text-lg sm:text-xl font-bold text-dark-brown mb-3 sm:mb-4">Order Notes (Optional)</h3>
                   <textarea
                     name="orderNotes"
                     value={formData.orderNotes}
@@ -442,8 +442,8 @@ export default function Checkout() {
 
               {/* Right Column - Order Summary */}
               <div className="lg:col-span-1">
-                <div className="bg-white rounded-[20px] p-6 shadow-[0_4px_15px_rgba(0,0,0,0.08)] sticky top-24">
-                  <h2 className="text-2xl font-bold text-dark-brown mb-6">Order Summary</h2>
+                <div className="bg-white rounded-[20px] p-5 sm:p-6 shadow-[0_4px_15px_rgba(0,0,0,0.08)] lg:sticky lg:top-24">
+                  <h2 className="text-xl sm:text-2xl font-bold text-dark-brown mb-4 sm:mb-6">Order Summary</h2>
                   
                   {/* Cart Items */}
                   <div className="space-y-4 mb-6 max-h-64 overflow-y-auto">
