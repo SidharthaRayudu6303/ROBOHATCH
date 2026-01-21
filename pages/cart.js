@@ -46,7 +46,10 @@ export default function Cart() {
   }
 
   const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
-  const shipping = subtotal > 0 ? 10 : 0
+  // Constant delivery charge of ₹100
+  const deliveryCharges = 100
+  // Free delivery for orders above ₹1000
+  const shipping = subtotal >= 1000 ? 0 : deliveryCharges
   const tax = subtotal * 0.08
   const total = subtotal + shipping + tax
 
@@ -90,7 +93,12 @@ export default function Cart() {
                       <div className="flex-1 flex flex-col justify-between">
                         <div>
                           <h3 className="text-xl font-bold text-dark-brown mb-2">{item.name}</h3>
-                          <p className="text-gray-600 text-sm mb-4">{item.description}</p>
+                          <p className="text-gray-600 text-sm mb-2">{item.description}</p>
+                          <div className="h-0.5 w-16 bg-gradient-to-r from-primary-orange to-transparent my-2"></div>
+                          <p className="text-sm text-gray-600">
+                            <i className="fas fa-truck text-primary-orange mr-1"></i>
+                            Delivery: <span className="font-semibold text-dark-brown">₹100.00</span>
+                          </p>
                         </div>
                         <button 
                           className="flex items-center gap-2 text-red-500 hover:text-red-700 font-medium text-sm transition-colors duration-300 self-start"
@@ -139,6 +147,28 @@ export default function Cart() {
                       <span className="font-semibold">₹{subtotal.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-gray-700">
+                      <span>Delivery Charges</span>
+                      <span className={`font-semibold ${subtotal >= 1000 ? 'line-through text-gray-400' : ''}`}>
+                        ₹{deliveryCharges.toFixed(2)}
+                      </span>
+                    </div>
+                    {subtotal >= 1000 && (
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-3 -mt-2">
+                        <p className="text-green-700 text-sm font-semibold flex items-center gap-2">
+                          <i className="fas fa-check-circle"></i>
+                          Free Delivery! (Orders above ₹1000)
+                        </p>
+                      </div>
+                    )}
+                    {subtotal < 1000 && subtotal > 0 && (
+                      <div className="bg-orange-50 border border-primary-orange/30 rounded-lg p-3 -mt-2">
+                        <p className="text-primary-orange text-sm font-semibold">
+                          <i className="fas fa-info-circle mr-1"></i>
+                          Add ₹{(1000 - subtotal).toFixed(2)} more for FREE delivery!
+                        </p>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-gray-700">
                       <span>Shipping</span>
                       <span className="font-semibold">₹{shipping.toFixed(2)}</span>
                     </div>
@@ -146,17 +176,17 @@ export default function Cart() {
                       <span>Tax (8%)</span>
                       <span className="font-semibold">₹{tax.toFixed(2)}</span>
                     </div>
-                    <div className="border-t-2 border-gray-200 pt-4"></div>
+                    <div className="h-0.5 w-full bg-gradient-to-r from-primary-orange via-hover-orange to-primary-orange mt-4 mb-4"></div>
                     <div className="flex justify-between text-xl font-bold text-dark-brown">
                       <span>Total</span>
                       <span className="text-primary-orange">₹{total.toFixed(2)}</span>
                     </div>
                   </div>
                   
-                  <button className="w-full bg-primary-orange text-white px-6 py-4 rounded-full font-bold text-lg shadow-[0_4px_15px_rgba(242,92,5,0.3)] hover:bg-hover-orange transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_6px_20px_rgba(242,92,5,0.4)] flex items-center justify-center gap-3 mb-4">
+                  <Link href="/checkout" className="w-full bg-primary-orange text-white px-6 py-4 rounded-full font-bold text-lg shadow-[0_4px_15px_rgba(242,92,5,0.3)] hover:bg-hover-orange transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_6px_20px_rgba(242,92,5,0.4)] flex items-center justify-center gap-3 mb-4">
                     Proceed to Checkout
                     <i className="fas fa-arrow-right"></i>
-                  </button>
+                  </Link>
                   
                   <Link href="/" className="w-full flex items-center justify-center gap-3 text-primary-orange hover:text-hover-orange font-semibold text-sm transition-colors duration-300">
                     <i className="fas fa-arrow-left"></i>

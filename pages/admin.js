@@ -35,11 +35,12 @@ export default function Admin() {
     link: '',
     items: ['']
   })
-  const [orders, setOrders] = useState([
-    { id: 1, customer: 'John Doe', email: 'john@example.com', product: 'Custom Keychain', status: 'Pending', total: '₹299', date: '2026-01-08' },
-    { id: 2, customer: 'Jane Smith', email: 'jane@example.com', product: 'Iron Man Model', status: 'Completed', total: '₹899', date: '2026-01-07' },
-    { id: 3, customer: 'Mike Johnson', email: 'mike@example.com', product: 'Ganesh Statue', status: 'Processing', total: '₹599', date: '2026-01-09' },
-  ])
+  const [orders, setOrders] = useState([])
+  const [selectedOrder, setSelectedOrder] = useState(null)
+  const [showOrderDetails, setShowOrderDetails] = useState(false)
+  const [siteUpdates, setSiteUpdates] = useState([])
+  const [editingUpdate, setEditingUpdate] = useState(null)
+  const [updateForm, setUpdateForm] = useState({ message: '', active: true })
 
   // Load removed products, edits, and custom products from localStorage on mount
   useEffect(() => {
@@ -69,7 +70,105 @@ export default function Admin() {
     if (customCats) {
       setCustomCategories(JSON.parse(customCats))
     }
+    
+    // Load orders
+    loadOrders()
+    
+    // Load updates
+    loadUpdates()
   }, [])
+
+  const loadOrders = () => {
+    const storedOrders = localStorage.getItem('orders')
+    if (storedOrders) {
+      setOrders(JSON.parse(storedOrders))
+    }
+  }
+
+  const loadUpdates = () => {
+    const storedUpdates = localStorage.getItem('siteUpdates')
+    if (storedUpdates) {
+      setSiteUpdates(JSON.parse(storedUpdates))
+    }
+  }
+
+  const handleAddUpdate = () => {
+    const newUpdate = {
+      id: Date.now(),
+      message: updateForm.message,
+      active: updateForm.active,
+      createdAt: new Date().toISOString()
+    }
+    const updatedUpdates = [...siteUpdates, newUpdate]
+    setSiteUpdates(updatedUpdates)
+    localStorage.setItem('siteUpdates', JSON.stringify(updatedUpdates))
+    setUpdateForm({ message: '', active: true })
+    window.dispatchEvent(new Event('updatesChanged'))
+  }
+
+  const handleEditUpdate = (update) => {
+    setEditingUpdate(update)
+    setUpdateForm({ message: update.message, active: update.active })
+  }
+
+  const handleSaveUpdateEdit = () => {
+    const updatedUpdates = siteUpdates.map(update =>
+      update.id === editingUpdate.id
+        ? { ...update, message: updateForm.message, active: updateForm.active }
+        : update
+    )
+    setSiteUpdates(updatedUpdates)
+    localStorage.setItem('siteUpdates', JSON.stringify(updatedUpdates))
+    setEditingUpdate(null)
+    setUpdateForm({ message: '', active: true })
+    window.dispatchEvent(new Event('updatesChanged'))
+  }
+
+  const handleDeleteUpdate = (updateId) => {
+    if (confirm('Are you sure you want to delete this update?')) {
+      const updatedUpdates = siteUpdates.filter(update => update.id !== updateId)
+      setSiteUpdates(updatedUpdates)
+      localStorage.setItem('siteUpdates', JSON.stringify(updatedUpdates))
+      window.dispatchEvent(new Event('updatesChanged'))
+    }
+  }
+
+  const handleToggleUpdateStatus = (updateId) => {
+    const updatedUpdates = siteUpdates.map(update =>
+      update.id === updateId ? { ...update, active: !update.active } : update
+    )
+    setSiteUpdates(updatedUpdates)
+    localStorage.setItem('siteUpdates', JSON.stringify(updatedUpdates))
+    window.dispatchEvent(new Event('updatesChanged'))
+  }
+
+  const handleViewOrder = (order) => {
+    setSelectedOrder(order)
+    setShowOrderDetails(true)
+  }
+
+  const handleUpdateOrderStatus = (orderId, newStatus) => {
+    const updatedOrders = orders.map(order => 
+      order.id === orderId ? { ...order, status: newStatus } : order
+    )
+    setOrders(updatedOrders)
+    localStorage.setItem('orders', JSON.stringify(updatedOrders))
+    if (selectedOrder && selectedOrder.id === orderId) {
+      setSelectedOrder({ ...selectedOrder, status: newStatus })
+    }
+  }
+
+  const handleDeleteOrder = (orderId) => {
+    if (confirm('Are you sure you want to delete this order?')) {
+      const updatedOrders = orders.filter(order => order.id !== orderId)
+      setOrders(updatedOrders)
+      localStorage.setItem('orders', JSON.stringify(updatedOrders))
+      if (showOrderDetails) {
+        setShowOrderDetails(false)
+        setSelectedOrder(null)
+      }
+    }
+  }
 
   const handleLogout = () => {
     router.push('/login')
@@ -400,6 +499,13 @@ export default function Admin() {
               Customers
             </button>
             <button 
+              className={`flex items-center gap-3 px-6 py-3.5 text-left transition-all border-none bg-transparent cursor-pointer w-full text-sm font-medium ${activeTab === 'updates' ? 'bg-primary-orange/10 text-primary-orange border-l-4 border-primary-orange' : 'text-white/80 hover:bg-white/5 hover:text-white'}`}
+              onClick={() => setActiveTab('updates')}
+            >
+              <i className="fas fa-bullhorn text-lg"></i>
+              Updates
+            </button>
+            <button 
               className={`flex items-center gap-3 px-6 py-3.5 text-left transition-all border-none bg-transparent cursor-pointer w-full text-sm font-medium ${activeTab === 'settings' ? 'bg-primary-orange/10 text-primary-orange border-l-4 border-primary-orange' : 'text-white/80 hover:bg-white/5 hover:text-white'}`}
               onClick={() => setActiveTab('settings')}
             >
@@ -537,11 +643,19 @@ export default function Admin() {
                           <td className="p-4 border-b border-[#e9ecef] text-[#666] text-sm font-semibold">{order.total}</td>
                           <td className="p-4 border-b border-[#e9ecef] text-[#666] text-sm">{order.date}</td>
                           <td className="p-4 border-b border-[#e9ecef] text-[#666] text-sm">
-                            <button className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors duration-200 mr-2">
+                            <button 
+                              onClick={() => handleViewOrder(order)}
+                              className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors duration-200 mr-2"
+                              title="View Details"
+                            >
                               <i className="fas fa-eye"></i>
                             </button>
-                            <button className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-green-100 text-green-600 hover:bg-green-200 transition-colors duration-200">
-                              <i className="fas fa-edit"></i>
+                            <button 
+                              onClick={() => handleDeleteOrder(order.id)}
+                              className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-red-100 text-red-600 hover:bg-red-200 transition-colors duration-200"
+                              title="Delete Order"
+                            >
+                              <i className="fas fa-trash"></i>
                             </button>
                           </td>
                         </tr>
@@ -840,6 +954,109 @@ export default function Admin() {
               </div>
             )}
 
+            {activeTab === 'updates' && (
+              <div>
+                <h2 className="text-xl font-semibold text-dark-brown mb-6 flex items-center justify-between">
+                  <span>Site Updates</span>
+                </h2>
+                
+                {/* Add New Update Form */}
+                <div className="bg-white p-8 rounded-[15px] shadow-[0_2px_8px_rgba(0,0,0,0.08)] mb-8">
+                  <h3 className="text-xl font-bold text-dark-brown mb-4">Add New Update</h3>
+                  <div className="mb-4">
+                    <label className="block font-semibold text-dark-brown mb-2 text-[0.95rem]">Update Message</label>
+                    <textarea
+                      value={updateForm.message}
+                      onChange={(e) => setUpdateForm({ ...updateForm, message: e.target.value })}
+                      placeholder="Enter update message (e.g., 'New products available!', 'Free shipping on orders above ₹1000')"
+                      rows="3"
+                      className="w-full px-4 py-3.5 border-2 border-[#e0e0e0] rounded-lg text-[0.95rem] transition-all focus:outline-none focus:border-primary-orange focus:ring-4 focus:ring-primary-orange/10 resize-none"
+                    />
+                  </div>
+                  <div className="mb-4 flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="activeStatus"
+                      checked={updateForm.active}
+                      onChange={(e) => setUpdateForm({ ...updateForm, active: e.target.checked })}
+                      className="w-4 h-4 cursor-pointer"
+                    />
+                    <label htmlFor="activeStatus" className="text-sm text-gray-700 cursor-pointer">Show on website</label>
+                  </div>
+                  <button
+                    onClick={handleAddUpdate}
+                    disabled={!updateForm.message.trim()}
+                    className="bg-primary-orange text-white px-6 py-3 rounded-lg font-semibold transition-all hover:bg-hover-orange border-none cursor-pointer shadow-[0_4px_15px_rgba(242,92,5,0.3)] hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(242,92,5,0.4)] disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <i className="fas fa-plus mr-2"></i>
+                    Add Update
+                  </button>
+                </div>
+
+                {/* Updates List */}
+                <div className="bg-white rounded-[15px] shadow-[0_2px_8px_rgba(0,0,0,0.08)] overflow-hidden">
+                  <div className="px-8 py-6 border-b border-gray-200">
+                    <h3 className="text-xl font-bold text-dark-brown">All Updates ({siteUpdates.length})</h3>
+                  </div>
+                  {siteUpdates.length === 0 ? (
+                    <div className="p-12 text-center text-gray-500">
+                      <i className="fas fa-bullhorn text-5xl mb-4 text-gray-300"></i>
+                      <p className="text-lg">No updates yet. Add your first update above!</p>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-gray-200">
+                      {siteUpdates.map((update) => (
+                        <div key={update.id} className="p-6 hover:bg-gray-50 transition-colors">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-2">
+                                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                  update.active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                                }`}>
+                                  {update.active ? 'Active' : 'Inactive'}
+                                </span>
+                                <span className="text-xs text-gray-500">
+                                  {new Date(update.createdAt).toLocaleDateString()}
+                                </span>
+                              </div>
+                              <p className="text-dark-brown font-medium mb-2">{update.message}</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => handleToggleUpdateStatus(update.id)}
+                                className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                                  update.active
+                                    ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                    : 'bg-green-100 text-green-700 hover:bg-green-200'
+                                }`}
+                                title={update.active ? 'Deactivate' : 'Activate'}
+                              >
+                                <i className={`fas ${update.active ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                              </button>
+                              <button
+                                onClick={() => handleEditUpdate(update)}
+                                className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg font-semibold text-sm hover:bg-blue-200 transition-all"
+                                title="Edit"
+                              >
+                                <i className="fas fa-edit"></i>
+                              </button>
+                              <button
+                                onClick={() => handleDeleteUpdate(update.id)}
+                                className="px-4 py-2 bg-red-100 text-red-700 rounded-lg font-semibold text-sm hover:bg-red-200 transition-all"
+                                title="Delete"
+                              >
+                                <i className="fas fa-trash"></i>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {activeTab === 'settings' && (
               <div>
                 <h2 className="text-xl font-semibold text-dark-brown mb-6">Settings</h2>
@@ -863,6 +1080,50 @@ export default function Admin() {
             )}
           </div>
         </div>
+
+        {/* Edit Update Modal */}
+        {editingUpdate && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[10000]" onClick={() => setEditingUpdate(null)}>
+            <div className="bg-white rounded-[20px] w-[90%] max-w-[500px] shadow-[0_10px_40px_rgba(0,0,0,0.3)] animate-modal-slide-in" onClick={(e) => e.stopPropagation()}>
+              <div className="flex justify-between items-center px-8 py-6 border-b-2 border-[#f0f0f0]">
+                <h2 className="text-2xl text-dark-brown m-0">Edit Update</h2>
+                <button className="bg-transparent border-none text-2xl text-[#999] cursor-pointer transition-colors w-[35px] h-[35px] flex items-center justify-center rounded-full hover:text-[#f44336] hover:bg-[#fee]" onClick={() => setEditingUpdate(null)}>
+                  <i className="fas fa-times"></i>
+                </button>
+              </div>
+              <div className="p-8">
+                <div className="mb-6">
+                  <label className="block font-semibold text-dark-brown mb-2 text-[0.95rem]">Update Message</label>
+                  <textarea
+                    value={updateForm.message}
+                    onChange={(e) => setUpdateForm({ ...updateForm, message: e.target.value })}
+                    placeholder="Enter update message"
+                    rows="4"
+                    className="w-full px-4 py-3.5 border-2 border-[#e0e0e0] rounded-lg text-[0.95rem] transition-all focus:outline-none focus:border-primary-orange focus:ring-4 focus:ring-primary-orange/10 resize-none"
+                  />
+                </div>
+                <div className="mb-6 flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="editActiveStatus"
+                    checked={updateForm.active}
+                    onChange={(e) => setUpdateForm({ ...updateForm, active: e.target.checked })}
+                    className="w-4 h-4 cursor-pointer"
+                  />
+                  <label htmlFor="editActiveStatus" className="text-sm text-gray-700 cursor-pointer">Show on website</label>
+                </div>
+              </div>
+              <div className="flex justify-end gap-4 px-8 py-6 border-t-2 border-[#f0f0f0]">
+                <button className="bg-[#f5f5f5] text-[#666] border-none px-8 py-3.5 rounded-lg text-base font-semibold cursor-pointer transition-all hover:bg-[#e0e0e0]" onClick={() => setEditingUpdate(null)}>
+                  Cancel
+                </button>
+                <button className="bg-gradient-to-br from-primary-orange to-hover-orange text-white border-none px-8 py-3.5 rounded-lg text-base font-semibold cursor-pointer transition-all shadow-[0_4px_15px_rgba(242,92,5,0.3)] hover:bg-hover-orange hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(242,92,5,0.4)]" onClick={handleSaveUpdateEdit}>
+                  Save Changes
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Edit Product Modal */}
         {editingProduct && (
@@ -1152,6 +1413,187 @@ export default function Admin() {
                 <button className="bg-gradient-to-br from-primary-orange to-hover-orange text-white border-none px-8 py-3.5 rounded-lg text-base font-semibold cursor-pointer transition-all shadow-[0_4px_15px_rgba(242,92,5,0.3)] hover:bg-hover-orange hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(242,92,5,0.4)]" onClick={handleSaveNewCategory}>
                   Add Category
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Order Details Modal */}
+        {showOrderDetails && selectedOrder && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowOrderDetails(false)}>
+            <div className="bg-white rounded-[20px] max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-[0_10px_50px_rgba(0,0,0,0.3)]" onClick={(e) => e.stopPropagation()}>
+              <div className="sticky top-0 bg-gradient-to-r from-primary-orange to-hover-orange px-8 py-6 flex items-center justify-between rounded-t-[20px] z-10">
+                <h2 className="text-2xl font-bold text-white">Order Details #{selectedOrder.id}</h2>
+                <button className="text-white hover:text-gray-200 transition-colors text-2xl" onClick={() => setShowOrderDetails(false)}>
+                  <i className="fas fa-times"></i>
+                </button>
+              </div>
+              
+              <div className="p-8">
+                {/* Customer Information */}
+                <div className="mb-8">
+                  <h3 className="text-xl font-bold text-dark-brown mb-4 flex items-center gap-2">
+                    <i className="fas fa-user text-primary-orange"></i>
+                    Customer Information
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 rounded-lg p-6">
+                    <div>
+                      <p className="text-sm text-gray-600 mb-1">Name</p>
+                      <p className="font-semibold text-dark-brown">{selectedOrder.customer}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600 mb-1">Email</p>
+                      <p className="font-semibold text-dark-brown">{selectedOrder.email}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600 mb-1">Phone</p>
+                      <p className="font-semibold text-dark-brown">{selectedOrder.phone || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600 mb-1">Order Date</p>
+                      <p className="font-semibold text-dark-brown">{selectedOrder.date}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Shipping Address */}
+                <div className="mb-8">
+                  <h3 className="text-xl font-bold text-dark-brown mb-4 flex items-center gap-2">
+                    <i className="fas fa-map-marker-alt text-primary-orange"></i>
+                    Shipping Address
+                  </h3>
+                  <div className="bg-gray-50 rounded-lg p-6">
+                    <p className="text-dark-brown">{selectedOrder.address}</p>
+                    <p className="text-dark-brown">{selectedOrder.city}, {selectedOrder.state} {selectedOrder.zipCode}</p>
+                    <p className="text-dark-brown">{selectedOrder.country || 'India'}</p>
+                  </div>
+                </div>
+
+                {/* Order Items */}
+                <div className="mb-8">
+                  <h3 className="text-xl font-bold text-dark-brown mb-4 flex items-center gap-2">
+                    <i className="fas fa-shopping-bag text-primary-orange"></i>
+                    Order Items
+                  </h3>
+                  <div className="space-y-4">
+                    {selectedOrder.items.map((item, index) => (
+                      <div key={index} className="flex items-center gap-4 bg-gray-50 rounded-lg p-4">
+                        <div className="w-16 h-16 bg-gradient-to-br from-primary-orange to-hover-orange rounded-lg flex items-center justify-center text-white flex-shrink-0">
+                          <i className={`fas ${item.icon || 'fa-box'} text-xl`}></i>
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-dark-brown">{item.name}</h4>
+                          <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-primary-orange">₹{(item.price * item.quantity).toFixed(2)}</p>
+                          <p className="text-xs text-gray-600">₹{item.price.toFixed(2)} each</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Payment & Total */}
+                <div className="mb-8">
+                  <h3 className="text-xl font-bold text-dark-brown mb-4 flex items-center gap-2">
+                    <i className="fas fa-credit-card text-primary-orange"></i>
+                    Payment Details
+                  </h3>
+                  <div className="bg-gray-50 rounded-lg p-6">
+                    <div className="flex justify-between mb-3">
+                      <span className="text-gray-700">Payment Method</span>
+                      <span className="font-semibold text-dark-brown capitalize">{selectedOrder.paymentMethod}</span>
+                    </div>
+                    <div className="flex justify-between mb-3">
+                      <span className="text-gray-700">Subtotal</span>
+                      <span className="font-semibold text-dark-brown">₹{selectedOrder.subtotal.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between mb-3">
+                      <span className="text-gray-700">Shipping</span>
+                      <span className="font-semibold text-dark-brown">₹{selectedOrder.shipping.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between mb-3">
+                      <span className="text-gray-700">Tax</span>
+                      <span className="font-semibold text-dark-brown">₹{selectedOrder.tax.toFixed(2)}</span>
+                    </div>
+                    <div className="border-t-2 border-gray-300 pt-3 mt-3">
+                      <div className="flex justify-between">
+                        <span className="text-lg font-bold text-dark-brown">Total</span>
+                        <span className="text-xl font-bold text-primary-orange">{selectedOrder.total}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Order Status Update */}
+                <div className="mb-6">
+                  <h3 className="text-xl font-bold text-dark-brown mb-4 flex items-center gap-2">
+                    <i className="fas fa-tasks text-primary-orange"></i>
+                    Update Status
+                  </h3>
+                  <div className="flex flex-wrap gap-3">
+                    <button
+                      onClick={() => handleUpdateOrderStatus(selectedOrder.id, 'Pending')}
+                      className={`px-6 py-3 rounded-lg font-semibold transition-all ${selectedOrder.status === 'Pending' ? 'bg-yellow-500 text-white' : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'}`}
+                    >
+                      Pending
+                    </button>
+                    <button
+                      onClick={() => handleUpdateOrderStatus(selectedOrder.id, 'Processing')}
+                      className={`px-6 py-3 rounded-lg font-semibold transition-all ${selectedOrder.status === 'Processing' ? 'bg-blue-500 text-white' : 'bg-blue-100 text-blue-700 hover:bg-blue-200'}`}
+                    >
+                      Processing
+                    </button>
+                    <button
+                      onClick={() => handleUpdateOrderStatus(selectedOrder.id, 'Shipped')}
+                      className={`px-6 py-3 rounded-lg font-semibold transition-all ${selectedOrder.status === 'Shipped' ? 'bg-purple-500 text-white' : 'bg-purple-100 text-purple-700 hover:bg-purple-200'}`}
+                    >
+                      Shipped
+                    </button>
+                    <button
+                      onClick={() => handleUpdateOrderStatus(selectedOrder.id, 'Delivered')}
+                      className={`px-6 py-3 rounded-lg font-semibold transition-all ${selectedOrder.status === 'Delivered' ? 'bg-green-500 text-white' : 'bg-green-100 text-green-700 hover:bg-green-200'}`}
+                    >
+                      Delivered
+                    </button>
+                    <button
+                      onClick={() => handleUpdateOrderStatus(selectedOrder.id, 'Cancelled')}
+                      className={`px-6 py-3 rounded-lg font-semibold transition-all ${selectedOrder.status === 'Cancelled' ? 'bg-red-500 text-white' : 'bg-red-100 text-red-700 hover:bg-red-200'}`}
+                    >
+                      Cancelled
+                    </button>
+                  </div>
+                </div>
+
+                {/* Order Notes */}
+                {selectedOrder.orderNotes && (
+                  <div className="mb-6">
+                    <h3 className="text-xl font-bold text-dark-brown mb-4 flex items-center gap-2">
+                      <i className="fas fa-sticky-note text-primary-orange"></i>
+                      Order Notes
+                    </h3>
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                      <p className="text-dark-brown">{selectedOrder.orderNotes}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Actions */}
+                <div className="flex gap-4">
+                  <button
+                    onClick={() => setShowOrderDetails(false)}
+                    className="flex-1 bg-gray-200 text-dark-brown px-6 py-4 rounded-lg font-bold hover:bg-gray-300 transition-colors"
+                  >
+                    Close
+                  </button>
+                  <button
+                    onClick={() => handleDeleteOrder(selectedOrder.id)}
+                    className="flex-1 bg-red-500 text-white px-6 py-4 rounded-lg font-bold hover:bg-red-600 transition-colors"
+                  >
+                    Delete Order
+                  </button>
+                </div>
               </div>
             </div>
           </div>
