@@ -65,32 +65,25 @@ export default function Navbar({ hideLogin = false, hideMenu = false, hideCart =
       <nav className="sticky top-0 bg-white/98 backdrop-blur-md shadow-md z-[1000] transition-all duration-300">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-5 lg:px-6 xl:px-8">
           <div className="flex justify-between items-center py-3 sm:py-4">
-            <Link href="/" className="text-lg sm:text-2xl md:text-3xl font-extrabold text-black tracking-wide flex items-center gap-2 sm:gap-3 no-underline transition-opacity duration-300 hover:opacity-80">
+            <Link href="/" className="text-base sm:text-2xl md:text-3xl font-extrabold text-black tracking-wide flex items-center gap-2 sm:gap-3 no-underline transition-opacity duration-300 hover:opacity-80">
               <Image src="/logo.png" alt="ROBOHATCH Logo" width={40} height={40} className="sm:w-[50px] sm:h-[50px] md:w-[55px] md:h-[55px] rounded-full border-2 border-primary-orange p-[5px] bg-white shadow-[0_2px_10px_rgba(242,92,5,0.3)] transition-transform duration-300 hover:scale-105" />
-              <span className="hidden sm:inline">ROBOHATCH</span>
-              <span className="sm:hidden">ROBO</span>
+              <span>ROBOHATCH</span>
             </Link>
-            {!hideMenu && (
-              <>
-                {/* Desktop Menu */}
-                <ul className="hidden md:flex list-none gap-6 lg:gap-8 xl:gap-10">
-                  <li><Link href="/" className="no-underline text-dark-brown font-medium text-sm lg:text-base xl:text-lg transition-colors duration-300 relative after:content-[''] after:absolute after:bottom-[-5px] after:left-0 after:w-0 after:h-0.5 after:bg-primary-orange after:transition-[width] after:duration-300 hover:text-primary-orange hover:after:w-full">Home</Link></li>
-                  <li><Link href="/#services" className="no-underline text-dark-brown font-medium text-sm lg:text-base xl:text-lg transition-colors duration-300 relative after:content-[''] after:absolute after:bottom-[-5px] after:left-0 after:w-0 after:h-0.5 after:bg-primary-orange after:transition-[width] after:duration-300 hover:text-primary-orange hover:after:w-full">Categories</Link></li>
-                  <li><Link href="/#products" className="no-underline text-dark-brown font-medium text-sm lg:text-base xl:text-lg transition-colors duration-300 relative after:content-[''] after:absolute after:bottom-[-5px] after:left-0 after:w-0 after:h-0.5 after:bg-primary-orange after:transition-[width] after:duration-300 hover:text-primary-orange hover:after:w-full">Products</Link></li>
-                  <li><Link href="/about" className="no-underline text-dark-brown font-medium text-sm lg:text-base xl:text-lg transition-colors duration-300 relative after:content-[''] after:absolute after:bottom-[-5px] after:left-0 after:w-0 after:h-0.5 after:bg-primary-orange after:transition-[width] after:duration-300 hover:text-primary-orange hover:after:w-full">About</Link></li>
-                  <li><Link href="/contact" className="no-underline text-dark-brown font-medium text-sm lg:text-base xl:text-lg transition-colors duration-300 relative after:content-[''] after:absolute after:bottom-[-5px] after:left-0 after:w-0 after:h-0.5 after:bg-primary-orange after:transition-[width] after:duration-300 hover:text-primary-orange hover:after:w-full">Contact</Link></li>
-                </ul>
-                {/* Mobile Menu Button */}
-                <button
-                  className="md:hidden text-dark-brown text-2xl p-2 hover:bg-orange-50 rounded-lg transition-all active:scale-90"
-                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  aria-label="Toggle menu"
-                >
-                  <i className={`fas ${mobileMenuOpen ? 'fa-times' : 'fa-bars'}`}></i>
-                </button>
-              </>
-            )}
-            <div className="flex items-center gap-4 sm:gap-6">
+            <div className="flex items-center gap-3 sm:gap-4 md:gap-6">
+              {!hideMenu && (
+                <>
+                  {/* Desktop Menu */}
+                  <ul className="hidden md:flex list-none gap-6 lg:gap-8 xl:gap-10">
+                    <li><Link href="/" className="no-underline text-dark-brown font-medium text-sm lg:text-base xl:text-lg transition-colors duration-300 relative after:content-[''] after:absolute after:bottom-[-5px] after:left-0 after:w-0 after:h-0.5 after:bg-primary-orange after:transition-[width] after:duration-300 hover:text-primary-orange hover:after:w-full">Home</Link></li>
+                    <li><Link href="/#services" className="no-underline text-dark-brown font-medium text-sm lg:text-base xl:text-lg transition-colors duration-300 relative after:content-[''] after:absolute after:bottom-[-5px] after:left-0 after:w-0 after:h-0.5 after:bg-primary-orange after:transition-[width] after:duration-300 hover:text-primary-orange hover:after:w-full">Categories</Link></li>
+                    <li><Link href="/#products" className="no-underline text-dark-brown font-medium text-sm lg:text-base xl:text-lg transition-colors duration-300 relative after:content-[''] after:absolute after:bottom-[-5px] after:left-0 after:w-0 after:h-0.5 after:bg-primary-orange after:transition-[width] after:duration-300 hover:text-primary-orange hover:after:w-full">Products</Link></li>
+                    <li><Link href="/about" className="no-underline text-dark-brown font-medium text-sm lg:text-base xl:text-lg transition-colors duration-300 relative after:content-[''] after:absolute after:bottom-[-5px] after:left-0 after:w-0 after:h-0.5 after:bg-primary-orange after:transition-[width] after:duration-300 hover:text-primary-orange hover:after:w-full">About</Link></li>
+                    <li><Link href="/contact" className="no-underline text-dark-brown font-medium text-sm lg:text-base xl:text-lg transition-colors duration-300 relative after:content-[''] after:absolute after:bottom-[-5px] after:left-0 after:w-0 after:h-0.5 after:bg-primary-orange after:transition-[width] after:duration-300 hover:text-primary-orange hover:after:w-full">Contact</Link></li>
+                    <li><Link href="/profile" className="no-underline text-dark-brown font-medium text-sm lg:text-base xl:text-lg transition-colors duration-300 relative after:content-[''] after:absolute after:bottom-[-5px] after:left-0 after:w-0 after:h-0.5 after:bg-primary-orange after:transition-[width] after:duration-300 hover:text-primary-orange hover:after:w-full">Profile</Link></li>
+                  </ul>
+                </>
+              )}
+              <div className="flex items-center gap-3 sm:gap-4">
               {!hideCart && (
                 <Link href="/cart" className="relative text-dark-brown text-2xl sm:text-[1.3rem] transition-colors duration-300 no-underline hover:text-primary-orange active:scale-90 p-1">
                   <i className="fas fa-shopping-cart"></i>
@@ -98,16 +91,26 @@ export default function Navbar({ hideLogin = false, hideMenu = false, hideCart =
                 </Link>
               )}
               {!hideLogin && (
-                <Link href="/login" className="hidden sm:flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-2.5 bg-gradient-to-br from-primary-orange to-hover-orange text-white no-underline rounded-full font-semibold text-sm sm:text-[0.95rem] shadow-[0_4px_15px_rgba(242,92,5,0.3)] transition-all duration-300 relative overflow-hidden before:content-[''] before:absolute before:top-0 before:left-[-100%] before:w-full before:h-full before:bg-gradient-to-r before:from-transparent before:via-white/30 before:to-transparent before:transition-[left] before:duration-500 hover:translate-y-[-2px] hover:shadow-[0_6px_20px_rgba(242,92,5,0.4)] hover:before:left-full active:translate-y-0">
-                  <i className="fas fa-user text-base sm:text-[1.1rem] animate-pulse-custom"></i>
-                  <span>Login</span>
+                <Link href="/profile" className="text-dark-brown text-2xl sm:text-[1.3rem] transition-colors duration-300 no-underline hover:text-primary-orange active:scale-90 p-1">
+                  <i className="fas fa-user-circle"></i>
                 </Link>
               )}
               {!hideLogin && (
-                <Link href="/login" className="sm:hidden text-primary-orange text-xl p-2">
-                  <i className="fas fa-user"></i>
+                <Link href="/login" className="hidden sm:flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-2.5 bg-gradient-to-br from-primary-orange to-hover-orange text-white no-underline rounded-full font-semibold text-sm sm:text-[0.95rem] shadow-[0_4px_15px_rgba(242,92,5,0.3)] transition-all duration-300 relative overflow-hidden before:content-[''] before:absolute before:top-0 before:left-[-100%] before:w-full before:h-full before:bg-gradient-to-r before:from-transparent before:via-white/30 before:to-transparent before:transition-[left] before:duration-500 hover:translate-y-[-2px] hover:shadow-[0_6px_20px_rgba(242,92,5,0.4)] hover:before:left-full active:translate-y-0">
+                  <i className="fas fa-sign-in-alt text-base sm:text-[1.1rem] animate-pulse-custom"></i>
+                  <span>Login</span>
                 </Link>
               )}
+              {!hideMenu && (
+                <button
+                  className="md:hidden text-dark-brown text-2xl p-2 hover:bg-orange-50 rounded-lg transition-all active:scale-90"
+                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                  aria-label="Toggle menu"
+                >
+                  <i className={`fas ${mobileMenuOpen ? 'fa-times' : 'fa-bars'}`}></i>
+                </button>
+              )}
+            </div>
             </div>
           </div>
           {/* Mobile Menu Dropdown */}
@@ -119,6 +122,7 @@ export default function Navbar({ hideLogin = false, hideMenu = false, hideCart =
                 <li><Link href="/#products" className="block no-underline text-dark-brown font-medium text-base py-2 px-4 hover:bg-orange-50 hover:text-primary-orange transition-colors" onClick={() => setMobileMenuOpen(false)}>Products</Link></li>
                 <li><Link href="/about" className="block no-underline text-dark-brown font-medium text-base py-2 px-4 hover:bg-orange-50 hover:text-primary-orange transition-colors" onClick={() => setMobileMenuOpen(false)}>About</Link></li>
                 <li><Link href="/contact" className="block no-underline text-dark-brown font-medium text-base py-2 px-4 hover:bg-orange-50 hover:text-primary-orange transition-colors" onClick={() => setMobileMenuOpen(false)}>Contact</Link></li>
+                <li><Link href="/profile" className="block no-underline text-dark-brown font-medium text-base py-2 px-4 hover:bg-orange-50 hover:text-primary-orange transition-colors" onClick={() => setMobileMenuOpen(false)}><i className="fas fa-user-circle mr-2"></i>My Profile</Link></li>
               </ul>
             </div>
           )}
