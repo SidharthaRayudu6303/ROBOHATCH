@@ -101,7 +101,25 @@ export default function Login() {
             console.warn('No token found in response:', data)
           }
 
-          router.push('/admin')
+          // Save basic user data if available from response
+          const userData = data?.user || data?.data?.user || {}
+          const userProfile = {
+            name: userData.name || email.split('@')[0],
+            email: userData.email || email,
+            phone: userData.phone || '',
+            address: userData.address || '',
+            city: userData.city || '',
+            state: userData.state || '',
+            pincode: userData.pincode || ''
+          }
+          localStorage.setItem('userProfile', JSON.stringify(userProfile))
+
+          // Trigger auth state change
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new Event('authChanged'))
+          }
+
+          router.push('/')
         } catch (error) {
           setLoginError('Unable to reach login service')
         }
@@ -142,8 +160,27 @@ export default function Login() {
             console.warn('No token found in registration response:', data)
           }
 
-          // Redirect to admin or show success message
-          router.push('/admin')
+          // Save user profile data from signup form or backend response
+          const userData = data?.user || data?.data?.user || {}
+          const userProfile = {
+            name: name || userData.name || email.split('@')[0],
+            email: email || userData.email || '',
+            phone: userData.phone || '',
+            address: userData.address || '',
+            city: userData.city || '',
+            state: userData.state || '',
+            pincode: userData.pincode || ''
+          }
+          localStorage.setItem('userProfile', JSON.stringify(userProfile))
+          console.log('User profile saved:', userProfile)
+
+          // Trigger auth state change
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new Event('authChanged'))
+          }
+
+          // Redirect to home page
+          router.push('/')
         } catch (error) {
           console.error('Registration error:', error)
           setLoginError('Unable to reach registration service')
@@ -187,14 +224,13 @@ export default function Login() {
               )}
               {isSignUp && (
                 <div className="flex flex-col">
-                  <label htmlFor="name" className="text-[#2c3e50] mb-2 font-medium text-sm">Full Name</label>
+                  <label htmlFor="name" className="text-[#2c3e50] mb-2 font-medium text-sm">Full Name (Optional)</label>
                   <input 
                     type="text" 
                     id="name" 
                     placeholder="Enter your full name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    required
                     className="w-full px-4 py-3.5 border-2 border-border-color rounded-lg transition-all focus:outline-none focus:border-primary-orange focus:ring-4 focus:ring-primary-orange/10"
                   />
                 </div>
@@ -305,7 +341,7 @@ export default function Login() {
                     <input type="checkbox" className="w-4 h-4 accent-primary-orange" />
                     <span className="text-sm text-[#666]">Remember me</span>
                   </label>
-                  <Link href="#" className="text-sm text-primary-orange hover:underline">Forgot Password?</Link>
+                  <Link href="/forgot-password" className="text-sm text-primary-orange hover:underline">Forgot Password?</Link>
                 </div>
               )}
 

@@ -2,14 +2,26 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { getAuthToken } from '../utils/api'
 
 export default function Navbar({ hideLogin = false, hideMenu = false, hideCart = false }) {
   const [cartCount, setCartCount] = useState(0)
   const [updates, setUpdates] = useState([])
   const [currentUpdateIndex, setCurrentUpdateIndex] = useState(0)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
 
   useEffect(() => {
+    // Check authentication status
+    const checkAuth = () => {
+      const token = getAuthToken()
+      setIsAuthenticated(!!token)
+    }
+    checkAuth()
+    
+    // Listen for auth changes
+    window.addEventListener('authChanged', checkAuth)
+    
     // Load cart count on mount
     updateCartCount()
     
@@ -29,6 +41,7 @@ export default function Navbar({ hideLogin = false, hideMenu = false, hideCart =
     window.addEventListener('updatesChanged', handleUpdatesChange)
     
     return () => {
+      window.removeEventListener('authChanged', checkAuth)
       window.removeEventListener('cartUpdated', handleCartUpdate)
       window.removeEventListener('updatesChanged', handleUpdatesChange)
     }
@@ -79,7 +92,9 @@ export default function Navbar({ hideLogin = false, hideMenu = false, hideCart =
                     <li><Link href="/#products" className="no-underline text-dark-brown font-medium text-sm lg:text-base xl:text-lg transition-colors duration-300 relative after:content-[''] after:absolute after:bottom-[-5px] after:left-0 after:w-0 after:h-0.5 after:bg-primary-orange after:transition-[width] after:duration-300 hover:text-primary-orange hover:after:w-full">Products</Link></li>
                     <li><Link href="/about" className="no-underline text-dark-brown font-medium text-sm lg:text-base xl:text-lg transition-colors duration-300 relative after:content-[''] after:absolute after:bottom-[-5px] after:left-0 after:w-0 after:h-0.5 after:bg-primary-orange after:transition-[width] after:duration-300 hover:text-primary-orange hover:after:w-full">About</Link></li>
                     <li><Link href="/contact" className="no-underline text-dark-brown font-medium text-sm lg:text-base xl:text-lg transition-colors duration-300 relative after:content-[''] after:absolute after:bottom-[-5px] after:left-0 after:w-0 after:h-0.5 after:bg-primary-orange after:transition-[width] after:duration-300 hover:text-primary-orange hover:after:w-full">Contact</Link></li>
-                    <li><Link href="/profile" className="no-underline text-dark-brown font-medium text-sm lg:text-base xl:text-lg transition-colors duration-300 relative after:content-[''] after:absolute after:bottom-[-5px] after:left-0 after:w-0 after:h-0.5 after:bg-primary-orange after:transition-[width] after:duration-300 hover:text-primary-orange hover:after:w-full">Profile</Link></li>
+                    {isAuthenticated && (
+                      <li><Link href="/profile" className="no-underline text-dark-brown font-medium text-sm lg:text-base xl:text-lg transition-colors duration-300 relative after:content-[''] after:absolute after:bottom-[-5px] after:left-0 after:w-0 after:h-0.5 after:bg-primary-orange after:transition-[width] after:duration-300 hover:text-primary-orange hover:after:w-full">Profile</Link></li>
+                    )}
                   </ul>
                 </>
               )}
@@ -90,12 +105,12 @@ export default function Navbar({ hideLogin = false, hideMenu = false, hideCart =
                   <span className="absolute top-[-10px] right-[-12px] bg-gradient-to-br from-primary-orange to-hover-orange text-white rounded-full w-[18px] h-[18px] sm:w-[18px] sm:h-[18px] flex items-center justify-center text-[0.65rem] sm:text-[0.7rem] font-bold shadow-md">{cartCount}</span>
                 </Link>
               )}
-              {!hideLogin && (
+              {!hideLogin && isAuthenticated && (
                 <Link href="/profile" className="text-dark-brown text-2xl sm:text-[1.3rem] transition-colors duration-300 no-underline hover:text-primary-orange active:scale-90 p-1">
                   <i className="fas fa-user-circle"></i>
                 </Link>
               )}
-              {!hideLogin && (
+              {!hideLogin && !isAuthenticated && (
                 <Link href="/login" className="hidden sm:flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-2.5 bg-gradient-to-br from-primary-orange to-hover-orange text-white no-underline rounded-full font-semibold text-sm sm:text-[0.95rem] shadow-[0_4px_15px_rgba(242,92,5,0.3)] transition-all duration-300 relative overflow-hidden before:content-[''] before:absolute before:top-0 before:left-[-100%] before:w-full before:h-full before:bg-gradient-to-r before:from-transparent before:via-white/30 before:to-transparent before:transition-[left] before:duration-500 hover:translate-y-[-2px] hover:shadow-[0_6px_20px_rgba(242,92,5,0.4)] hover:before:left-full active:translate-y-0">
                   <i className="fas fa-sign-in-alt text-base sm:text-[1.1rem] animate-pulse-custom"></i>
                   <span>Login</span>
@@ -122,7 +137,12 @@ export default function Navbar({ hideLogin = false, hideMenu = false, hideCart =
                 <li><Link href="/#products" className="block no-underline text-dark-brown font-medium text-base py-2 px-4 hover:bg-orange-50 hover:text-primary-orange transition-colors" onClick={() => setMobileMenuOpen(false)}>Products</Link></li>
                 <li><Link href="/about" className="block no-underline text-dark-brown font-medium text-base py-2 px-4 hover:bg-orange-50 hover:text-primary-orange transition-colors" onClick={() => setMobileMenuOpen(false)}>About</Link></li>
                 <li><Link href="/contact" className="block no-underline text-dark-brown font-medium text-base py-2 px-4 hover:bg-orange-50 hover:text-primary-orange transition-colors" onClick={() => setMobileMenuOpen(false)}>Contact</Link></li>
-                <li><Link href="/profile" className="block no-underline text-dark-brown font-medium text-base py-2 px-4 hover:bg-orange-50 hover:text-primary-orange transition-colors" onClick={() => setMobileMenuOpen(false)}><i className="fas fa-user-circle mr-2"></i>My Profile</Link></li>
+                {isAuthenticated && (
+                  <li><Link href="/profile" className="block no-underline text-dark-brown font-medium text-base py-2 px-4 hover:bg-orange-50 hover:text-primary-orange transition-colors" onClick={() => setMobileMenuOpen(false)}><i className="fas fa-user-circle mr-2"></i>My Profile</Link></li>
+                )}
+                {!isAuthenticated && (
+                  <li><Link href="/login" className="block no-underline text-dark-brown font-medium text-base py-2 px-4 hover:bg-orange-50 hover:text-primary-orange transition-colors" onClick={() => setMobileMenuOpen(false)}><i className="fas fa-sign-in-alt mr-2"></i>Login</Link></li>
+                )}
               </ul>
             </div>
           )}

@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react'
 import Head from 'next/head'
+import { useRouter } from 'next/router'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
+import { getAuthToken } from '../utils/api'
 
 export default function Profile() {
+  const router = useRouter()
   const [user, setUser] = useState({
-    name: 'Guest User',
-    email: 'guest@robohatch.com',
-    phone: '+91 1234567890',
+    name: '',
+    email: '',
+    phone: '',
     address: '',
     city: '',
     state: '',
@@ -15,8 +18,16 @@ export default function Profile() {
   })
   const [isEditing, setIsEditing] = useState(false)
   const [orders, setOrders] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
+    // Check authentication
+    const token = getAuthToken()
+    if (!token) {
+      router.push('/login')
+      return
+    }
+
     // Load user data from localStorage
     const savedUser = localStorage.getItem('userProfile')
     if (savedUser) {
@@ -28,6 +39,8 @@ export default function Profile() {
     if (savedOrders) {
       setOrders(JSON.parse(savedOrders))
     }
+
+    setIsLoading(false)
   }, [])
 
   const handleSave = () => {
@@ -38,6 +51,26 @@ export default function Profile() {
 
   const handleChange = (field, value) => {
     setUser({ ...user, [field]: value })
+  }
+
+  const handleLogout = () => {
+    localStorage.removeItem('auth_token')
+    localStorage.removeItem('userProfile')
+    
+    // Trigger auth state change
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('authChanged'))
+    }
+    
+    router.push('/login')
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <i className="fas fa-spinner fa-spin text-4xl text-primary-orange"></i>
+      </div>
+    )
   }
 
   return (
@@ -226,6 +259,10 @@ export default function Profile() {
                     <i className="fas fa-headset text-primary-orange text-lg"></i>
                     <span className="text-sm sm:text-base font-medium text-gray-700 group-hover:text-primary-orange">Contact Support</span>
                   </a>
+                  <button onClick={handleLogout} className="flex items-center gap-3 p-3 rounded-lg bg-red-50 hover:bg-red-100 transition-colors group w-full">
+                    <i className="fas fa-sign-out-alt text-red-600 text-lg"></i>
+                    <span className="text-sm sm:text-base font-medium text-gray-700 group-hover:text-red-600">Logout</span>
+                  </button>
                 </div>
               </div>
             </div>
