@@ -75,6 +75,22 @@ export default function Login() {
     e.preventDefault()
     setLoginError('')
 
+    // Sanitize inputs to prevent XSS
+    const sanitizedEmail = email.trim().toLowerCase()
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    
+    if (!emailRegex.test(sanitizedEmail)) {
+      setLoginError('Please enter a valid email address')
+      return
+    }
+
+    // Check for common injection patterns
+    const dangerousPatterns = /<script|javascript:|onerror=|onclick=/gi
+    if (dangerousPatterns.test(email) || dangerousPatterns.test(name)) {
+      setLoginError('Invalid characters detected')
+      return
+    }
+
     if (!isSignUp) {
       // Sign In: call API proxy
       ;(async () => {
@@ -82,7 +98,7 @@ export default function Login() {
           const resp = await fetch('/api/auth/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password }),
+            body: JSON.stringify({ email: sanitizedEmail, password }),
           })
 
           const data = await resp.json()
@@ -104,13 +120,13 @@ export default function Login() {
           // Save basic user data if available from response
           const userData = data?.user || data?.data?.user || {}
           const userProfile = {
-            name: userData.name || email.split('@')[0],
-            email: userData.email || email,
-            phone: userData.phone || '',
-            address: userData.address || '',
-            city: userData.city || '',
-            state: userData.state || '',
-            pincode: userData.pincode || ''
+            name: (userData.name || sanitizedEmail.split('@')[0]).substring(0, 100), // Limit length
+            email: (userData.email || sanitizedEmail).substring(0, 100),
+            phone: (userData.phone || '').substring(0, 20),
+            address: (userData.address || '').substring(0, 200),
+            city: (userData.city || '').substring(0, 100),
+            state: (userData.state || '').substring(0, 100),
+            pincode: (userData.pincode || '').substring(0, 10)
           }
           localStorage.setItem('userProfile', JSON.stringify(userProfile))
 
@@ -120,7 +136,7 @@ export default function Login() {
           }
 
           // Check if user is admin and redirect accordingly
-          if (email === 'admin@robohatch.com') {
+          if (sanitizedEmail === 'admin@robohatch.com') {
             router.push('/admin')
           } else {
             router.push('/')
@@ -141,11 +157,11 @@ export default function Login() {
       }
       ;(async () => {
         try {
-          console.log('Sending registration request with:', { name, email, password: '***' })
+          console.log('Sending registration request with:', { name, email: sanitizedEmail, password: '***' })
           const resp = await fetch('/api/auth/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, email, password }),
+            body: JSON.stringify({ name: name.substring(0, 100), email: sanitizedEmail, password }),
           })
 
           const data = await resp.json()
@@ -168,13 +184,13 @@ export default function Login() {
           // Save user profile data from signup form or backend response
           const userData = data?.user || data?.data?.user || {}
           const userProfile = {
-            name: name || userData.name || email.split('@')[0],
-            email: email || userData.email || '',
-            phone: userData.phone || '',
-            address: userData.address || '',
-            city: userData.city || '',
-            state: userData.state || '',
-            pincode: userData.pincode || ''
+            name: (name || userData.name || email.split('@')[0]).substring(0, 100),
+            email: (sanitizedEmail || userData.email || '').substring(0, 100),
+            phone: (userData.phone || '').substring(0, 20),
+            address: (userData.address || '').substring(0, 200),
+            city: (userData.city || '').substring(0, 100),
+            state: (userData.state || '').substring(0, 100),
+            pincode: (userData.pincode || '').substring(0, 10)
           }
           localStorage.setItem('userProfile', JSON.stringify(userProfile))
           console.log('User profile saved:', userProfile)

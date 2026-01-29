@@ -14,14 +14,35 @@ export default function Contact() {
   const [notification, setNotification] = useState('')
 
   const handleChange = (e) => {
+    const { name, value } = e.target
+    // Basic XSS prevention - sanitize input
+    const sanitizedValue = value.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+      .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
+      .replace(/javascript:/gi, '')
+    
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [name]: sanitizedValue
     })
   }
 
   const handleSubmit = (e) => {
     e.preventDefault()
+    
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(formData.email)) {
+      setNotification('Please enter a valid email address.')
+      setTimeout(() => setNotification(''), 5000)
+      return
+    }
+    
+    // Validate phone number if provided
+    if (formData.phone && !/^[\d\s\-\+\(\)]+$/.test(formData.phone)) {
+      setNotification('Please enter a valid phone number.')
+      setTimeout(() => setNotification(''), 5000)
+      return
+    }
     
     if (formData.name && formData.email && formData.message) {
       setNotification('Thank you for contacting us! We will get back to you within 24 hours.')

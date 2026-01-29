@@ -323,6 +323,12 @@ export default function MyOrders() {
                         </button>
                       )}
                       <button 
+                        className="flex-1 bg-blue-500 text-white py-3 rounded-lg font-semibold text-sm sm:text-base hover:bg-blue-600 hover:shadow-lg transition-all active:scale-95"
+                      >
+                        <i className="fas fa-file-invoice mr-2"></i>
+                        Invoice
+                      </button>
+                      <button 
                         className="flex-1 bg-gradient-to-r from-primary-orange to-hover-orange text-white py-3 rounded-lg font-semibold text-sm sm:text-base hover:shadow-lg transition-all active:scale-95"
                         onClick={() => router.push('/contact')}
                       >

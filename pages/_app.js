@@ -6,6 +6,11 @@ export default function App({ Component, pageProps }) {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
+    // Security: Prevent clickjacking
+    if (window.self !== window.top) {
+      window.top.location = window.self.location
+    }
+    
     // Check if loading screen has already been shown in this session
     const hasShownLoading = sessionStorage.getItem('hasShownLoading')
     
