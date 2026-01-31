@@ -134,3 +134,6 @@ const apiClient = {
   put,
   delete: del,
   patch,
+}
+
+export default apiClient

@@ -83,7 +83,7 @@ export default async function handler(req, res) {
       return res.status(response.status).json({ error: data?.error || data?.message || 'Request failed' })
     }
 
-    return res.status(200).json(data)
+    return res.status(200).json(data);
   } catch (err) {
     console.error('Profile API error:', err)
     return res.status(500).json({ error: 'Unexpected server error' })

@@ -291,12 +291,7 @@ export default function MyOrders() {
       <Footer />
     </>
   )
-}
-                    <span className="font-semibold">Order #</span>
-                    <span className="text-primary-orange font-bold">{orderToCancel}</span>
-                  </p>
-                </div>
-              )}
+}}
 
               {/* Buttons */}
               <div className="flex gap-3">
