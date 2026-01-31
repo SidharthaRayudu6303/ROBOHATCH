@@ -1,3 +1,5 @@
+import Link from 'next/link'
+
 export default function Hero() {
   const scrollToProducts = () => {
     const productsSection = document.querySelector('#products')
@@ -53,14 +55,18 @@ export default function Hero() {
           </div>
           <div className="hidden md:block fade-in delay-1">
             <div className="grid grid-cols-2 gap-6 lg:gap-8">
-              <div className="bg-gradient-to-br from-white to-orange-50/40 py-8 md:py-10 lg:py-12 px-6 md:px-7 lg:px-8 rounded-[20px] text-center shadow-[0_10px_30px_rgba(242,92,5,0.1)] transition-all duration-300 hover:-translate-y-2.5 hover:shadow-[0_15px_40px_rgba(242,92,5,0.2)] hover:to-orange-100/50 [&>i]:text-[3rem] md:[&>i]:text-[3.5rem] lg:[&>i]:text-[4rem] [&>i]:text-primary-orange [&>i]:mb-3 md:[&>i]:mb-4 [&>p]:font-semibold [&>p]:text-dark-brown [&>p]:text-sm md:[&>p]:text-base">
-                <i className="fas fa-lightbulb"></i>
-                <p>3D Printed Lamps</p>
-              </div>
-              <div className="bg-gradient-to-br from-white to-orange-50/40 py-8 md:py-10 lg:py-12 px-6 md:px-7 lg:px-8 rounded-[20px] text-center shadow-[0_10px_30px_rgba(242,92,5,0.1)] transition-all duration-300 hover:-translate-y-2.5 hover:shadow-[0_15px_40px_rgba(242,92,5,0.2)] hover:to-orange-100/50 [&>i]:text-[3rem] md:[&>i]:text-[3.5rem] lg:[&>i]:text-[4rem] [&>i]:text-primary-orange [&>i]:mb-3 md:[&>i]:mb-4 [&>p]:font-semibold [&>p]:text-dark-brown [&>p]:text-sm md:[&>p]:text-base">
-                <i className="fas fa-om"></i>
-                <p>Devotional Idols</p>
-              </div>
+              <Link href="/lamps">
+                <div className="bg-gradient-to-br from-white to-orange-50/40 py-8 md:py-10 lg:py-12 px-6 md:px-7 lg:px-8 rounded-[20px] text-center shadow-[0_10px_30px_rgba(242,92,5,0.1)] transition-all duration-300 hover:-translate-y-2.5 hover:shadow-[0_15px_40px_rgba(242,92,5,0.2)] hover:to-orange-100/50 cursor-pointer [&>i]:text-[3rem] md:[&>i]:text-[3.5rem] lg:[&>i]:text-[4rem] [&>i]:text-primary-orange [&>i]:mb-3 md:[&>i]:mb-4 [&>p]:font-semibold [&>p]:text-dark-brown [&>p]:text-sm md:[&>p]:text-base">
+                  <i className="fas fa-lightbulb"></i>
+                  <p>3D Printed Lamps</p>
+                </div>
+              </Link>
+              <Link href="/idols">
+                <div className="bg-gradient-to-br from-white to-orange-50/40 py-8 md:py-10 lg:py-12 px-6 md:px-7 lg:px-8 rounded-[20px] text-center shadow-[0_10px_30px_rgba(242,92,5,0.1)] transition-all duration-300 hover:-translate-y-2.5 hover:shadow-[0_15px_40px_rgba(242,92,5,0.2)] hover:to-orange-100/50 cursor-pointer [&>i]:text-[3rem] md:[&>i]:text-[3.5rem] lg:[&>i]:text-[4rem] [&>i]:text-primary-orange [&>i]:mb-3 md:[&>i]:mb-4 [&>p]:font-semibold [&>p]:text-dark-brown [&>p]:text-sm md:[&>p]:text-base">
+                  <i className="fas fa-om"></i>
+                  <p>Devotional Idols</p>
+                </div>
+              </Link>
             </div>
           </div>
         </div>

@@ -53,7 +53,7 @@ export default function Categories() {
 
           <div className="space-y-8">
             {categories.map((category) => (
-              <div key={category.id} className="bg-white rounded-2xl shadow-lg overflow-hidden">
+              <div key={category.id} className="bg-white rounded-2xl shadow-lg overflow-hidden transition-all duration-300">
                 <div className="p-6 md:p-8">
                   <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
                     <div className="flex items-center gap-4">
@@ -67,25 +67,49 @@ export default function Categories() {
                         </span>
                       </div>
                     </div>
-                    <Link 
-                      href={category.link} 
+                    <button
+                      onClick={() => toggleCategory(category.id)}
                       className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-br from-primary-orange to-hover-orange text-white rounded-full font-semibold shadow-[0_4px_15px_rgba(242,92,5,0.3)] hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(242,92,5,0.4)] transition-all duration-300"
                     >
-                      Explore
-                      <i className="fas fa-arrow-right"></i>
-                    </Link>
+                      {expandedCategories.includes(category.id) ? 'Collapse' : 'Expand'}
+                      <i className={`fas fa-arrow-${expandedCategories.includes(category.id) ? 'up' : 'down'}`}></i>
+                    </button>
                   </div>
                   
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {category.items.slice(0, 4).map((item, index) => (
-                      <div key={index} className="flex items-center gap-3 p-3 bg-light-gray rounded-lg hover:bg-soft-peach/10 transition-colors">
-                        <div className="w-10 h-10 rounded-lg bg-primary-orange/10 flex items-center justify-center text-primary-orange">
-                          <i className={`fas ${category.icon} text-sm`}></i>
-                        </div>
-                        <span className="text-sm text-gray-700 font-medium">{item}</span>
-                      </div>
-                    ))}
-                  </div>
+                  {!expandedCategories.includes(category.id) && (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {category.items.slice(0, 4).map((item, index) => (
+                        <Link 
+                          key={index}
+                          href={`/product-category/${category.key}/${encodeURIComponent(item.toLowerCase().replace(/\s+/g, '-'))}`}
+                          className="flex items-center gap-3 p-3 bg-light-gray rounded-lg hover:bg-soft-peach/20 hover:shadow-md transition-all duration-300 cursor-pointer group"
+                        >
+                          <div className="w-10 h-10 rounded-lg bg-primary-orange/10 group-hover:bg-primary-orange/20 flex items-center justify-center text-primary-orange transition-colors">
+                            <i className={`fas ${category.icon} text-sm`}></i>
+                          </div>
+                          <span className="text-sm text-gray-700 font-medium group-hover:text-primary-orange transition-colors">{item}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+
+                  {expandedCategories.includes(category.id) && (
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 animate-[fadeIn_0.3s_ease-out]">
+                      {category.items.map((item, index) => (
+                        <Link 
+                          key={index} 
+                          href={`/product-category/${category.key}/${encodeURIComponent(item.toLowerCase().replace(/\s+/g, '-'))}`}
+                          className="flex items-center gap-3 p-4 bg-light-gray rounded-lg hover:bg-soft-peach/20 hover:shadow-md transition-all duration-300 cursor-pointer group"
+                        >
+                          <div className="w-12 h-12 rounded-lg bg-primary-orange/10 group-hover:bg-primary-orange/20 flex items-center justify-center text-primary-orange transition-colors">
+                            <i className={`fas ${category.icon}`}></i>
+                          </div>
+                          <span className="text-sm text-gray-700 font-medium group-hover:text-primary-orange transition-colors flex-1">{item}</span>
+                          <i className="fas fa-arrow-right text-primary-orange opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

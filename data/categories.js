@@ -2,6 +2,7 @@ export const defaultCategories = [
   {
     id: 'cat1',
     name: 'Keychains',
+    key: 'keychains',
     icon: 'fa-key',
     link: '/keychains',
     items: [
@@ -18,6 +19,7 @@ export const defaultCategories = [
   {
     id: 'cat2',
     name: 'Superhero Models',
+    key: 'superhero-models',
     icon: 'fa-mask',
     link: '/superhero-models',
     items: [
@@ -34,15 +36,16 @@ export const defaultCategories = [
   {
     id: 'cat3',
     name: 'Devotional Idols',
+    key: 'devotional-idols',
     icon: 'fa-om',
     link: '/devotional',
     items: [
       'Ganesha Idol',
       'Buddha Statue',
-      'Lakshmi Figure',
-      'Hanuman Idol',
-      'Krishna Statue',
-      'Shiva Lingam',
+      'Lakshmi Idol',
+      'Hanuman Statue',
+      'Krishna Idol',
+      'Shiva Linga',
       'Saraswati Idol',
       'Durga Maa'
     ]
@@ -50,6 +53,7 @@ export const defaultCategories = [
   {
     id: 'cat4',
     name: 'Toys & Games',
+    key: 'toys-games',
     icon: 'fa-gamepad',
     link: '/toys',
     items: [
@@ -66,6 +70,7 @@ export const defaultCategories = [
   {
     id: 'cat5',
     name: 'Home Decor',
+    key: 'home-decor',
     icon: 'fa-home',
     link: '/homedecor',
     items: [
@@ -82,6 +87,7 @@ export const defaultCategories = [
   {
     id: 'cat6',
     name: 'Jewelry & Accessories',
+    key: 'jewelry-accessories',
     icon: 'fa-gem',
     link: '/jewelry',
     items: [
@@ -98,6 +104,7 @@ export const defaultCategories = [
   {
     id: 'cat7',
     name: 'Phone Accessories',
+    key: 'phone-accessories',
     icon: 'fa-mobile-alt',
     link: '/phoneaccessories',
     items: [
@@ -114,6 +121,7 @@ export const defaultCategories = [
   {
     id: 'cat8',
     name: 'Office Supplies',
+    key: 'office-supplies',
     icon: 'fa-briefcase',
     link: '/office',
     items: [
@@ -130,6 +138,7 @@ export const defaultCategories = [
   {
     id: 'cat9',
     name: 'Lamps',
+    key: 'lamps',
     icon: 'fa-lightbulb',
     link: '/lamps',
     items: [
@@ -146,6 +155,7 @@ export const defaultCategories = [
   {
     id: 'cat10',
     name: 'Flower Pots',
+    key: 'flower-pots',
     icon: 'fa-leaf',
     link: '/flowerpots',
     items: [

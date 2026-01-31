@@ -20,23 +20,14 @@ export default function Navbar({ hideLogin = false, hideMenu = false, hideCart =
     const checkAuth = async () => {
       setIsCheckingAuth(true)
       try {
-        // Check if token exists first
-        if (!apiClient.isAuthenticated()) {
-          setIsAuthenticated(false)
-          setUser(null)
-          setIsCheckingAuth(false)
-          return
-        }
-
-        // Verify token with backend
+        // Verify auth with backend (uses cookies)
         const userData = await apiClient.get('/auth/profile')
         setIsAuthenticated(true)
         setUser(userData)
       } catch (error) {
-        // Token invalid or expired
+        // Not authenticated or token expired
         setIsAuthenticated(false)
         setUser(null)
-        apiClient.removeToken()
       } finally {
         setIsCheckingAuth(false)
       }

@@ -77,7 +77,7 @@ export default function LoadingScreen() {
     <div className={`fixed inset-0 bg-black flex items-center justify-center z-[9999] p-4 ${isComplete ? 'opacity-0 transition-opacity duration-500 pointer-events-none' : 'opacity-100'}`}>
       <div className="relative flex flex-col items-center w-full max-w-2xl">
         {/* Video Background */}
-        <div className="relative w-full max-w-[280px] sm:max-w-md md:max-w-lg lg:max-w-2xl mb-4 sm:mb-6 md:mb-8">
+        <div className="relative w-full max-w-[280px] sm:max-w-md md:max-w-lg lg:max-w-2xl mb-4 sm:mb-6 md:mb-8 pointer-events-none">
           <video
             ref={videoRef}
             className="w-full h-auto rounded-lg shadow-2xl"
@@ -88,10 +88,17 @@ export default function LoadingScreen() {
             preload="auto"
             disablePictureInPicture
             disableRemotePlayback
+            controls={false}
             poster=""
+            style={{ 
+              pointerEvents: 'none',
+              objectFit: 'cover'
+            }}
           >
             <source src="/loadinganimation.mp4" type="video/mp4" />
           </video>
+          {/* Overlay to completely block any interaction */}
+          <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 10 }}></div>
         </div>
 
         {/* Company Name */}

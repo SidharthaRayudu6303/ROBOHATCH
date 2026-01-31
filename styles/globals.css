@@ -49,3 +49,38 @@
   .delay-5 { animation-delay: 1s; }
   .delay-6 { animation-delay: 1.2s; }
 }
+
+/* Hide all video controls on all browsers */
+video::-webkit-media-controls {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+video::-webkit-media-controls-enclosure {
+  display: none !important;
+}
+
+video::-webkit-media-controls-panel {
+  display: none !important;
+}
+
+video::-webkit-media-controls-play-button {
+  display: none !important;
+}
+
+video::-webkit-media-controls-start-playback-button {
+  display: none !important;
+}
+
+video::-moz-media-controls {
+  display: none !important;
+}
+
+video::-o-media-controls {
+  display: none !important;
+}
+
+video::--media-controls {
+  display: none !important;
+}
