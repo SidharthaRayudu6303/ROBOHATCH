@@ -56,15 +56,17 @@ export default function Checkout() {
     }
   }, [isAuthenticated])
 
-  const loadCart = async () => {
+  const loadCart = () => {
     try {
       setIsLoadingCart(true)
       setError(null)
-      const data = await cartApi.getCart()
-      setCartItems(data.items || [])
-      
-      if (!data.items || data.items.length === 0) {
-        router.push('/cart')
+      if (typeof window !== 'undefined') {
+        const cart = JSON.parse(localStorage.getItem('cart') || '[]')
+        setCartItems(cart)
+        
+        if (!cart || cart.length === 0) {
+          router.push('/cart')
+        }
       }
     } catch (err) {
       setError('Failed to load cart')

@@ -4,50 +4,43 @@ import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import Head from 'next/head'
 import Link from 'next/link'
-import { cartApi } from '../utils/cartApi'
 
 export default function Cart() {
   const [cartItems, setCartItems] = useState([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState(null)
 
   useEffect(() => {
     loadCart()
+    const handleCartUpdate = () => {
+      loadCart()
+    }
+    window.addEventListener('cartUpdated', handleCartUpdate)
+    return () => {
+      window.removeEventListener('cartUpdated', handleCartUpdate)
+    }
   }, [])
 
-  const loadCart = async () => {
-    try {
-      setIsLoading(true)
-      setError(null)
-      const data = await cartApi.getCart()
-      setCartItems(data.items || [])
-    } catch (err) {
-      setError('Failed to load cart. Please try again.')
-    } finally {
-      setIsLoading(false)
+  const loadCart = () => {
+    if (typeof window !== 'undefined') {
+      const cart = JSON.parse(localStorage.getItem('cart') || '[]')
+      setCartItems(cart)
     }
   }
 
-  const updateQuantity = async (id, newQuantity) => {
+  const updateQuantity = (id, newQuantity) => {
     if (newQuantity < 1) return
-    
-    try {
-      await cartApi.updateItem(id, { quantity: newQuantity })
-      setCartItems(cartItems.map(item => 
-        item.id === id ? { ...item, quantity: newQuantity } : item
-      ))
-    } catch (err) {
-      setError('Failed to update quantity')
-    }
+    const updatedCart = cartItems.map(item => 
+      item.id === id ? { ...item, quantity: newQuantity } : item
+    )
+    setCartItems(updatedCart)
+    localStorage.setItem('cart', JSON.stringify(updatedCart))
+    window.dispatchEvent(new Event('cartUpdated'))
   }
 
-  const removeItem = async (id) => {
-    try {
-      await cartApi.removeItem(id)
-      setCartItems(cartItems.filter(item => item.id !== id))
-    } catch (err) {
-      setError('Failed to remove item')
-    }
+  const removeItem = (id) => {
+    const updatedCart = cartItems.filter(item => item.id !== id)
+    setCartItems(updatedCart)
+    localStorage.setItem('cart', JSON.stringify(updatedCart))
+    window.dispatchEvent(new Event('cartUpdated'))
   }
 
   const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
@@ -65,28 +58,7 @@ export default function Cart() {
       
       <Navbar />
       
-      {isLoading ? (
-        <div className="min-h-screen bg-gradient-to-br from-orange-50/40 via-white to-amber-50/30 py-12 flex items-center justify-center">
-          <div className="text-center">
-            <div className="inline-block animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-primary-orange mb-4"></div>
-            <p className="text-gray-600 text-lg">Loading cart...</p>
-          </div>
-        </div>
-      ) : error ? (
-        <div className="min-h-screen bg-gradient-to-br from-orange-50/40 via-white to-amber-50/30 py-12 flex items-center justify-center">
-          <div className="text-center max-w-md mx-auto px-4">
-            <i className="fas fa-exclamation-triangle text-5xl text-red-500 mb-4"></i>
-            <p className="text-red-600 text-lg mb-6">{error}</p>
-            <button
-              onClick={loadCart}
-              className="bg-primary-orange text-white px-6 py-3 rounded-full font-semibold hover:bg-hover-orange transition-all"
-            >
-              Try Again
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="min-h-screen bg-gradient-to-br from-orange-50/40 via-white to-amber-50/30 py-6 sm:py-8 md:py-12">
+      <div className="min-h-screen bg-gradient-to-br from-orange-50/40 via-white to-amber-50/30 py-6 sm:py-8 md:py-12">
           <div className="max-w-[1200px] mx-auto px-4 sm:px-5">
             <div className="mb-6 sm:mb-8 md:mb-12">
               <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-dark-brown mb-2">Shopping Cart</h1>
@@ -232,7 +204,6 @@ export default function Cart() {
             )}
           </div>
         </div>
-      )}
       
       <Footer />
     </>
