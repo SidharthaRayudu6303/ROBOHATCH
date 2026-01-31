@@ -9,44 +9,53 @@ export default function LoadingScreen() {
   useEffect(() => {
     const videoElement = videoRef.current
     
-    // Multiple attempts to play video for iOS
-    const attemptPlay = () => {
+    // Aggressive autoplay for iOS Safari
+    const attemptPlay = async () => {
       if (videoElement) {
-        // Set properties directly
-        videoElement.muted = true
-        videoElement.playsInline = true
-        videoElement.setAttribute('playsinline', '')
-        videoElement.setAttribute('webkit-playsinline', '')
-        videoElement.setAttribute('x5-playsinline', '')
-        
-        // Try to play
-        const playPromise = videoElement.play()
-        if (playPromise !== undefined) {
-          playPromise.catch(() => {
-            // Retry after delay
-            setTimeout(() => {
-              videoElement.play().catch(() => {})
-            }, 200)
-          })
+        try {
+          // Force mute and iOS attributes
+          videoElement.muted = true
+          videoElement.defaultMuted = true
+          videoElement.volume = 0
+          videoElement.playsInline = true
+          videoElement.setAttribute('playsinline', 'true')
+          videoElement.setAttribute('webkit-playsinline', 'true')
+          videoElement.setAttribute('x5-playsinline', 'true')
+          videoElement.setAttribute('x5-video-player-type', 'h5')
+          videoElement.setAttribute('x5-video-player-fullscreen', 'false')
+          videoElement.removeAttribute('controls')
+          
+          // Wait for video to be ready
+          if (videoElement.readyState < 3) {
+            await new Promise((resolve) => {
+              videoElement.addEventListener('canplay', resolve, { once: true })
+              videoElement.load()
+            })
+          }
+          
+          // Attempt play
+          await videoElement.play()
+        } catch (error) {
+          // Silent fail and retry
+          setTimeout(() => {
+            videoElement.play().catch(() => {})
+          }, 100)
         }
       }
     }
 
-    // Initial play attempt
-    attemptPlay()
-
-    // Try again on various events that might enable autoplay
-    const events = ['touchstart', 'touchend', 'click', 'scroll', 'mousemove']
-    const playOnce = () => {
+    // Immediate play attempt
+    setTimeout(attemptPlay, 0)
+    
+    // iOS Safari often needs user interaction, so try on first touch/click
+    const playOnInteraction = () => {
       attemptPlay()
-      events.forEach(event => {
-        document.removeEventListener(event, playOnce)
-      })
+      document.removeEventListener('touchstart', playOnInteraction)
+      document.removeEventListener('click', playOnInteraction)
     }
     
-    events.forEach(event => {
-      document.addEventListener(event, playOnce, { once: true })
-    })
+    document.addEventListener('touchstart', playOnInteraction, { once: true, passive: true })
+    document.addEventListener('click', playOnInteraction, { once: true })
 
     // Progress bar animation (0-4s) - starts immediately
     const progressInterval = setInterval(() => {
@@ -67,9 +76,8 @@ export default function LoadingScreen() {
     return () => {
       clearInterval(progressInterval)
       clearTimeout(completeTimer)
-      events.forEach(event => {
-        document.removeEventListener(event, playOnce)
-      })
+      document.removeEventListener('touchstart', playOnInteraction)
+      document.removeEventListener('click', playOnInteraction)
     }
   }, [])
 
@@ -77,7 +85,7 @@ export default function LoadingScreen() {
     <div className={`fixed inset-0 bg-black flex items-center justify-center z-[9999] p-4 ${isComplete ? 'opacity-0 transition-opacity duration-500 pointer-events-none' : 'opacity-100'}`}>
       <div className="relative flex flex-col items-center w-full max-w-2xl">
         {/* Video Background */}
-        <div className="relative w-full max-w-[280px] sm:max-w-md md:max-w-lg lg:max-w-2xl mb-4 sm:mb-6 md:mb-8 pointer-events-none">
+        <div className="relative w-full max-w-[280px] sm:max-w-md md:max-w-lg lg:max-w-2xl mb-4 sm:mb-6 md:mb-8">
           <video
             ref={videoRef}
             className="w-full h-auto rounded-lg shadow-2xl"
@@ -85,20 +93,32 @@ export default function LoadingScreen() {
             loop
             muted
             playsInline
+            webkit-playsinline="true"
+            x5-playsinline="true"
+            x5-video-player-type="h5"
+            x5-video-player-fullscreen="false"
             preload="auto"
             disablePictureInPicture
             disableRemotePlayback
-            controls={false}
-            poster=""
             style={{ 
               pointerEvents: 'none',
               objectFit: 'cover'
             }}
+            onContextMenu={(e) => e.preventDefault()}
           >
             <source src="/loadinganimation.mp4" type="video/mp4" />
           </video>
           {/* Overlay to completely block any interaction */}
-          <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 10 }}></div>
+          <div 
+            className="absolute inset-0" 
+            style={{ 
+              zIndex: 10, 
+              pointerEvents: 'none',
+              userSelect: 'none',
+              WebkitUserSelect: 'none',
+              WebkitTouchCallout: 'none'
+            }}
+          ></div>
         </div>
 
         {/* Company Name */}
