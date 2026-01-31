@@ -1,63 +1,77 @@
 'use client'
 import { useState, useEffect } from 'react'
-import Navbar from '../components/Navbar'
-import Footer from '../components/Footer'
+import { useRouter } from 'next/router'
 import Head from 'next/head'
 import Link from 'next/link'
-import { useRouter } from 'next/router'
+import Navbar from '../components/Navbar'
+import Footer from '../components/Footer'
+import { useAuth } from '../contexts/AuthContext'
+import { cartApi } from '../utils/cartApi'
+import { ordersApi } from '../utils/ordersApi'
 
 export default function Checkout() {
   const router = useRouter()
+  const { isAuthenticated, isLoading: authLoading } = useAuth()
   const [cartItems, setCartItems] = useState([])
+  const [isLoadingCart, setIsLoadingCart] = useState(true)
+  const [error, setError] = useState(null)
   const [formData, setFormData] = useState({
-    // Personal Information
     firstName: '',
     lastName: '',
     email: '',
     phone: '',
-    
-    // Shipping Address
     address: '',
     city: '',
     state: '',
     zipCode: '',
     country: 'India',
-    
-    // Payment Method
     paymentMethod: 'card',
-    
-    // Card Details
     cardNumber: '',
     cardName: '',
     expiryDate: '',
     cvv: '',
-    
-    // Additional
     orderNotes: ''
   })
 
   const [errors, setErrors] = useState({})
   const [isProcessing, setIsProcessing] = useState(false)
-  const [orderStatus, setOrderStatus] = useState(null) // null, 'success', or 'failed'
+  const [orderStatus, setOrderStatus] = useState(null)
   const [orderId, setOrderId] = useState(null)
 
   const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
-  // Constant delivery charge of ₹100
   const deliveryCharges = 100
-  // Free delivery for orders above ₹1000
   const shipping = subtotal >= 1000 ? 0 : deliveryCharges
   const tax = subtotal * 0.08
   const total = subtotal + shipping + tax
 
   useEffect(() => {
-    const cart = JSON.parse(localStorage.getItem('cart') || '[]')
-    setCartItems(cart)
-    
-    // Redirect if cart is empty
-    if (cart.length === 0) {
-      router.push('/cart')
+    if (!authLoading && !isAuthenticated) {
+      router.push('/login')
     }
-  }, [router])
+  }, [isAuthenticated, authLoading, router])
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadCart()
+    }
+  }, [isAuthenticated])
+
+  const loadCart = async () => {
+    try {
+      setIsLoadingCart(true)
+      setError(null)
+      const data = await cartApi.getCart()
+      setCartItems(data.items || [])
+      
+      if (!data.items || data.items.length === 0) {
+        router.push('/cart')
+      }
+    } catch (err) {
+      setError('Failed to load cart')
+    } finally {
+      setIsLoadingCart(false)
+    }
+  }
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -108,14 +122,13 @@ export default function Checkout() {
     }
     
     setIsProcessing(true)
+    setError(null)
     
-    // Simulate order processing
-    setTimeout(() => {
-      try {
-        // Create order object
-        const order = {
-          id: Date.now(),
-          customer: `${formData.firstName} ${formData.lastName}`,
+    try {
+      const orderData = {
+        shippingAddress: {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
           email: formData.email,
           phone: formData.phone,
           address: formData.address,
@@ -123,53 +136,40 @@ export default function Checkout() {
           state: formData.state,
           zipCode: formData.zipCode,
           country: formData.country,
-          items: cartItems,
-          subtotal: subtotal,
-          shipping: shipping,
-          tax: tax,
-          total: total.toFixed(2),
-          paymentMethod: formData.paymentMethod,
-          orderNotes: formData.orderNotes,
-          status: 'Confirmed',
-          date: new Date().toLocaleDateString('en-IN', { 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
-          })
-        }
-        
-        // Save order to localStorage
-        const existingOrders = JSON.parse(localStorage.getItem('orders') || '[]')
-        existingOrders.push(order)
-        localStorage.setItem('orders', JSON.stringify(existingOrders))
-        
-        // Save to order history for profile
-        const orderHistory = JSON.parse(localStorage.getItem('orderHistory') || '[]')
-        orderHistory.push(order)
-        localStorage.setItem('orderHistory', JSON.stringify(orderHistory))
-        
-        // Clear cart
-        localStorage.setItem('cart', JSON.stringify([]))
-        window.dispatchEvent(new Event('cartUpdated'))
-        
-        // Show success status
-        setOrderId(order.id)
-        setOrderStatus('success')
-        setIsProcessing(false)
-        
-        // Scroll to top to see the message
-        window.scrollTo({ top: 0, behavior: 'smooth' })
-      } catch (error) {
-        console.error('Order placement failed:', error)
-        setOrderStatus('failed')
-        setIsProcessing(false)
-        window.scrollTo({ top: 0, behavior: 'smooth' })
+        },
+        paymentMethod: formData.paymentMethod,
+        orderNotes: formData.orderNotes,
       }
-    }, 2000)
+      
+      const result = await ordersApi.checkout(orderData)
+      
+      setOrderId(result.orderId)
+      setOrderStatus('success')
+    } catch (err) {
+      setError(err.message || 'Failed to place order. Please try again.')
+      setOrderStatus('failed')
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    } finally {
+      setIsProcessing(false)
+    }
   }
 
-  if (cartItems.length === 0) {
-    return null // Will redirect in useEffect
+  if (authLoading || isLoadingCart) {
+    return (
+      <>
+        <Head>
+          <title>Checkout - ROBOHATCH</title>
+        </Head>
+        <Navbar />
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-primary-orange mb-4"></div>
+            <p className="text-gray-600 text-lg">Loading checkout...</p>
+          </div>
+        </div>
+        <Footer />
+      </>
+    )
   }
 
   return (
@@ -181,7 +181,17 @@ export default function Checkout() {
       
       <Navbar />
       
-      {/* Order Status Modal */}
+      {error && !orderStatus && (
+        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md px-4">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 shadow-lg">
+            <div className="flex items-center gap-3">
+              <i className="fas fa-exclamation-circle text-red-500 text-xl"></i>
+              <p className="text-red-700">{error}</p>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {orderStatus && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[10000] flex items-center justify-center p-4 animate-[fadeIn_0.3s_ease-out]">
           <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full animate-[slideUp_0.4s_ease-out]">
@@ -202,10 +212,10 @@ export default function Checkout() {
                   </p>
                   <div className="flex flex-col gap-3">
                     <button
-                      onClick={() => router.push('/')}
+                      onClick={() => router.push(`/payment?orderId=${orderId}`)}
                       className="w-full bg-gradient-to-r from-primary-orange to-hover-orange text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all"
                     >
-                      Continue Shopping
+                      Proceed to Payment
                     </button>
                     <button
                       onClick={() => router.push('/profile')}

@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
-import Head from 'next/head'
 import { useRouter } from 'next/router'
+import Head from 'next/head'
 import Link from 'next/link'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
@@ -9,7 +9,7 @@ import { useAuth } from '../contexts/AuthContext'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000/api/v1'
 
-export default function MyOrders() {
+export default function Orders() {
   const router = useRouter()
   const { isAuthenticated, isLoading: authLoading } = useAuth()
   const [orders, setOrders] = useState([])
@@ -24,11 +24,11 @@ export default function MyOrders() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      loadOrders()
+      fetchOrders()
     }
   }, [isAuthenticated])
 
-  const loadOrders = async () => {
+  const fetchOrders = async () => {
     try {
       setIsLoading(true)
       setError(null)
@@ -83,105 +83,11 @@ export default function MyOrders() {
     })
   }
 
-  const handleCancelOrder = (orderId) => {
-    setOrderToCancel(orderId)
-    setShowCancelModal(true)
-  }
-
-  const confirmCancelOrder = () => {
-    if (orderToCancel) {
-      const orderHistory = JSON.parse(localStorage.getItem('orderHistory') || '[]')
-      const updatedOrders = orderHistory.map(order => 
-        order.id === orderToCancel ? { ...order, status: 'Cancelled' } : order
-      )
-      localStorage.setItem('orderHistory', JSON.stringify(updatedOrders))
-      
-      // Also update in orders
-      const allOrders = JSON.parse(localStorage.getItem('orders') || '[]')
-      const updatedAllOrders = allOrders.map(order => 
-        order.id === orderToCancel ? { ...order, status: 'Cancelled' } : order
-      )
-      localStorage.setItem('orders', JSON.stringify(updatedAllOrders))
-      
-      loadOrders()
-      setShowCancelModal(false)
-      setOrderToCancel(null)
-    }
-  }
-
-  const handleReviewSubmit = () => {
-    if (!reviewData.comment.trim()) {
-      alert('Please write a review comment')
-      return
-    }
-
-    const review = {
-      id: Date.now(),
-      orderId: selectedOrder.id,
-      productId: reviewProduct.id,
-      productName: reviewProduct.name,
-      productImage: reviewProduct.image,
-      rating: reviewData.rating,
-      comment: reviewData.comment,
-      date: new Date().toLocaleDateString('en-IN', { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-      }),
-      customerName: selectedOrder.customer,
-      customerEmail: selectedOrder.email
-    }
-
-    // Save review
-    const reviews = JSON.parse(localStorage.getItem('reviews') || '[]')
-    reviews.push(review)
-    localStorage.setItem('reviews', JSON.stringify(reviews))
-
-    // Mark product as reviewed in order
-    const orderHistory = JSON.parse(localStorage.getItem('orderHistory') || '[]')
-    const updatedOrders = orderHistory.map(order => {
-      if (order.id === selectedOrder.id) {
-        return {
-          ...order,
-          items: order.items.map(item => 
-            item.id === reviewProduct.id ? { ...item, reviewed: true } : item
-          )
-        }
-      }
-      return order
-    })
-    localStorage.setItem('orderHistory', JSON.stringify(updatedOrders))
-
-    loadOrders()
-    setShowReviewModal(false)
-    setReviewData({ rating: 5, comment: '' })
-    setReviewProduct(null)
-    alert('Thank you for your review!')
-  }
-
-  const getStatusColor = (status) => {
-    switch (status.toLowerCase()) {
-      case 'confirmed':
-      case 'delivered':
-        return 'bg-green-100 text-green-700'
-      case 'pending':
-      case 'processing':
-        return 'bg-yellow-100 text-yellow-700'
-      case 'shipped':
-        return 'bg-blue-100 text-blue-700'
-      case 'cancelled':
-        return 'bg-red-100 text-red-700'
-      default:
-        return 'bg-gray-100 text-gray-700'
-    }
-  }
-
-
   if (authLoading || isLoading) {
     return (
       <>
         <Head>
-          <title>My Orders - ROBOHATCH</title>
+          <title>Orders - ROBOHATCH</title>
         </Head>
         <Navbar />
         <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12">
@@ -198,17 +104,14 @@ export default function MyOrders() {
   return (
     <>
       <Head>
-        <title>My Orders - ROBOHATCH</title>
-        <meta name="description" content="View your order history at ROBOHATCH" />
+        <title>Orders - ROBOHATCH</title>
       </Head>
-
       <Navbar />
-
       <div className="min-h-screen bg-gradient-to-br from-orange-50/40 via-white to-amber-50/30 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-8">
-            <h1 className="text-3xl sm:text-4xl font-bold text-dark-brown mb-2">My Orders</h1>
-            <p className="text-gray-600">Track and manage your orders</p>
+            <h1 className="text-3xl sm:text-4xl font-bold text-dark-brown mb-2">Orders</h1>
+            <p className="text-gray-600">View and track your orders</p>
           </div>
 
           {error && (
@@ -225,7 +128,7 @@ export default function MyOrders() {
               {orders.map((order) => (
                 <Link
                   key={order.orderId}
-                  href={`/order/${order.orderId}`}
+                  href={`/orders/${order.orderId}`}
                   className="block bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden"
                 >
                   <div className="p-6">
@@ -233,7 +136,7 @@ export default function MyOrders() {
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
                           <h3 className="text-xl font-bold text-dark-brown">
-                            Order #{order.orderId}
+                            #{order.orderId}
                           </h3>
                           <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(order.status)}`}>
                             {order.status}
@@ -245,7 +148,7 @@ export default function MyOrders() {
                         </p>
                       </div>
                       <div className="text-left sm:text-right">
-                        <p className="text-sm text-gray-600 mb-1">Total Amount</p>
+                        <p className="text-sm text-gray-600 mb-1">Total</p>
                         <p className="text-2xl font-bold text-primary-orange">
                           ₹{order.totalAmount?.toFixed(2)}
                         </p>
@@ -287,41 +190,6 @@ export default function MyOrders() {
           )}
         </div>
       </div>
-
-      <Footer />
-    </>
-  )
-}
-                    <span className="font-semibold">Order #</span>
-                    <span className="text-primary-orange font-bold">{orderToCancel}</span>
-                  </p>
-                </div>
-              )}
-
-              {/* Buttons */}
-              <div className="flex gap-3">
-                <button
-                  onClick={() => {
-                    setShowCancelModal(false)
-                    setOrderToCancel(null)
-                  }}
-                  className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
-                >
-                  No, Keep Order
-                </button>
-                <button
-                  onClick={confirmCancelOrder}
-                  className="flex-1 bg-gradient-to-r from-red-500 to-red-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all active:scale-95"
-                >
-                  <i className="fas fa-times-circle mr-2"></i>
-                  Yes, Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       <Footer />
     </>
   )

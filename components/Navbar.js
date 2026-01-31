@@ -2,21 +2,46 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { getAuthToken } from '../utils/api'
+import { useRouter } from 'next/router'
+import apiClient from '../utils/apiClient'
 
 export default function Navbar({ hideLogin = false, hideMenu = false, hideCart = false }) {
+  const router = useRouter()
   const [cartCount, setCartCount] = useState(0)
   const [updates, setUpdates] = useState([])
   const [currentUpdateIndex, setCurrentUpdateIndex] = useState(0)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [user, setUser] = useState(null)
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true)
 
   useEffect(() => {
-    // Check authentication status
-    const checkAuth = () => {
-      const token = getAuthToken()
-      setIsAuthenticated(!!token)
+    // Check authentication status with backend
+    const checkAuth = async () => {
+      setIsCheckingAuth(true)
+      try {
+        // Check if token exists first
+        if (!apiClient.isAuthenticated()) {
+          setIsAuthenticated(false)
+          setUser(null)
+          setIsCheckingAuth(false)
+          return
+        }
+
+        // Verify token with backend
+        const userData = await apiClient.get('/auth/profile')
+        setIsAuthenticated(true)
+        setUser(userData)
+      } catch (error) {
+        // Token invalid or expired
+        setIsAuthenticated(false)
+        setUser(null)
+        apiClient.removeToken()
+      } finally {
+        setIsCheckingAuth(false)
+      }
     }
+    
     checkAuth()
     
     // Listen for auth changes
@@ -73,6 +98,18 @@ export default function Navbar({ hideLogin = false, hideMenu = false, hideCart =
     }
   }
 
+  const handleLogout = () => {
+    // Remove token
+    apiClient.removeToken()
+    
+    // Clear any user data
+    setIsAuthenticated(false)
+    setUser(null)
+    
+    // Redirect to home
+    router.push('/')
+  }
+
   return (
     <>
       <nav className="sticky top-0 bg-white/98 backdrop-blur-md shadow-md z-[1000] transition-all duration-300">
@@ -110,11 +147,20 @@ export default function Navbar({ hideLogin = false, hideMenu = false, hideCart =
                   <i className="fas fa-user-circle"></i>
                 </Link>
               )}
-              {!hideLogin && !isAuthenticated && (
+              {!hideLogin && !isAuthenticated && !isCheckingAuth && (
                 <Link href="/login" className="hidden sm:flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-2.5 bg-gradient-to-br from-primary-orange to-hover-orange text-white no-underline rounded-full font-semibold text-sm sm:text-[0.95rem] shadow-[0_4px_15px_rgba(242,92,5,0.3)] transition-all duration-300 relative overflow-hidden before:content-[''] before:absolute before:top-0 before:left-[-100%] before:w-full before:h-full before:bg-gradient-to-r before:from-transparent before:via-white/30 before:to-transparent before:transition-[left] before:duration-500 hover:translate-y-[-2px] hover:shadow-[0_6px_20px_rgba(242,92,5,0.4)] hover:before:left-full active:translate-y-0">
                   <i className="fas fa-sign-in-alt text-base sm:text-[1.1rem] animate-pulse-custom"></i>
                   <span>Login</span>
                 </Link>
+              )}
+              {!hideLogin && isAuthenticated && (
+                <button 
+                  onClick={handleLogout}
+                  className="hidden sm:flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-2.5 bg-gradient-to-br from-gray-600 to-gray-700 text-white no-underline rounded-full font-semibold text-sm sm:text-[0.95rem] shadow-[0_4px_15px_rgba(0,0,0,0.2)] transition-all duration-300 hover:translate-y-[-2px] hover:shadow-[0_6px_20px_rgba(0,0,0,0.3)] active:translate-y-0"
+                >
+                  <i className="fas fa-sign-out-alt text-base sm:text-[1.1rem]"></i>
+                  <span>Logout</span>
+                </button>
               )}
               {!hideMenu && (
                 <button

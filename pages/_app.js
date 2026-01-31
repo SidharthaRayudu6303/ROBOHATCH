@@ -1,6 +1,7 @@
 import '@/styles/globals.css'
 import { useEffect, useState } from 'react'
 import LoadingScreen from '@/components/LoadingScreen'
+import { AuthProvider } from '@/contexts/AuthContext'
 
 export default function App({ Component, pageProps }) {
   const [loading, setLoading] = useState(false)
@@ -28,9 +29,11 @@ export default function App({ Component, pageProps }) {
   }, [])
 
   return (
-    <div style={{ width: '100%', overflowX: 'hidden', position: 'relative' }}>
-      {loading && <LoadingScreen />}
-      <Component {...pageProps} />
-    </div>
+    <AuthProvider>
+      <div style={{ width: '100%', overflowX: 'hidden', position: 'relative' }}>
+        {loading && <LoadingScreen />}
+        <Component {...pageProps} />
+      </div>
+    </AuthProvider>
   )
 }
