@@ -7,20 +7,48 @@ export default function LoadingScreen() {
   const videoRef = useRef(null)
 
   useEffect(() => {
-    // Force video play on mount
     const videoElement = videoRef.current
-    if (videoElement) {
-      videoElement.play().catch(err => {
-        // If autoplay fails, try again after a short delay
-        setTimeout(() => {
-          videoElement.play().catch(() => {
-            // Silent fail - video will show first frame
+    
+    // Multiple attempts to play video for iOS
+    const attemptPlay = () => {
+      if (videoElement) {
+        // Set properties directly
+        videoElement.muted = true
+        videoElement.playsInline = true
+        videoElement.setAttribute('playsinline', '')
+        videoElement.setAttribute('webkit-playsinline', '')
+        videoElement.setAttribute('x5-playsinline', '')
+        
+        // Try to play
+        const playPromise = videoElement.play()
+        if (playPromise !== undefined) {
+          playPromise.catch(() => {
+            // Retry after delay
+            setTimeout(() => {
+              videoElement.play().catch(() => {})
+            }, 200)
           })
-        }, 100)
-      })
+        }
+      }
     }
 
-    // Progress bar animation (0-4s)
+    // Initial play attempt
+    attemptPlay()
+
+    // Try again on various events that might enable autoplay
+    const events = ['touchstart', 'touchend', 'click', 'scroll', 'mousemove']
+    const playOnce = () => {
+      attemptPlay()
+      events.forEach(event => {
+        document.removeEventListener(event, playOnce)
+      })
+    }
+    
+    events.forEach(event => {
+      document.addEventListener(event, playOnce, { once: true })
+    })
+
+    // Progress bar animation (0-4s) - starts immediately
     const progressInterval = setInterval(() => {
       setProgress(prev => {
         if (prev >= 100) {
@@ -39,11 +67,14 @@ export default function LoadingScreen() {
     return () => {
       clearInterval(progressInterval)
       clearTimeout(completeTimer)
+      events.forEach(event => {
+        document.removeEventListener(event, playOnce)
+      })
     }
   }, [])
 
   return (
-    <div className={`fixed inset-0 bg-black flex items-center justify-center z-[9999] p-4 ${isComplete ? 'opacity-0 transition-opacity duration-500' : 'opacity-100'}`}>
+    <div className={`fixed inset-0 bg-black flex items-center justify-center z-[9999] p-4 ${isComplete ? 'opacity-0 transition-opacity duration-500 pointer-events-none' : 'opacity-100'}`}>
       <div className="relative flex flex-col items-center w-full max-w-2xl">
         {/* Video Background */}
         <div className="relative w-full max-w-[280px] sm:max-w-md md:max-w-lg lg:max-w-2xl mb-4 sm:mb-6 md:mb-8">
@@ -56,12 +87,10 @@ export default function LoadingScreen() {
             playsInline
             preload="auto"
             disablePictureInPicture
-            controlsList="nodownload nofullscreen noremoteplayback"
-            webkit-playsinline="true"
-            x5-playsinline="true"
+            disableRemotePlayback
+            poster=""
           >
             <source src="/loadinganimation.mp4" type="video/mp4" />
-            Your browser does not support the video tag.
           </video>
         </div>
 
