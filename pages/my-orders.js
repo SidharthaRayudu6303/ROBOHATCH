@@ -291,33 +291,4 @@ export default function MyOrders() {
       <Footer />
     </>
   )
-}}
-
-              {/* Buttons */}
-              <div className="flex gap-3">
-                <button
-                  onClick={() => {
-                    setShowCancelModal(false)
-                    setOrderToCancel(null)
-                  }}
-                  className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
-                >
-                  No, Keep Order
-                </button>
-                <button
-                  onClick={confirmCancelOrder}
-                  className="flex-1 bg-gradient-to-r from-red-500 to-red-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all active:scale-95"
-                >
-                  <i className="fas fa-times-circle mr-2"></i>
-                  Yes, Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <Footer />
-    </>
-  )
 }
