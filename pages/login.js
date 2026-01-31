@@ -3,7 +3,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import Navbar from '../components/Navbar'
-import { setAuthToken } from '../utils/api'
+import apiClient from '../utils/apiClient'
 
 export default function Login() {
   const router = useRouter()
@@ -17,6 +17,7 @@ export default function Login() {
   const [passwordErrors, setPasswordErrors] = useState([])
   const [passwordStrength, setPasswordStrength] = useState({ score: 0, label: '', color: '' })
   const [loginError, setLoginError] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
 
   const calculatePasswordStrength = (pass) => {
     if (!pass) return { score: 0, label: '', color: '' }
@@ -71,142 +72,95 @@ export default function Login() {
     }
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setLoginError('')
+    setIsLoading(true)
 
-    // Sanitize inputs to prevent XSS
-    const sanitizedEmail = email.trim().toLowerCase()
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    
-    if (!emailRegex.test(sanitizedEmail)) {
-      setLoginError('Please enter a valid email address')
-      return
-    }
-
-    // Check for common injection patterns
-    const dangerousPatterns = /<script|javascript:|onerror=|onclick=/gi
-    if (dangerousPatterns.test(email) || dangerousPatterns.test(name)) {
-      setLoginError('Invalid characters detected')
-      return
-    }
-
-    if (!isSignUp) {
-      // Sign In: call API proxy
-      ;(async () => {
-        try {
-          const resp = await fetch('/api/auth/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: sanitizedEmail, password }),
-          })
-
-          const data = await resp.json()
-
-          if (!resp.ok) {
-            setLoginError(data?.error || 'Invalid email or password')
-            return
-          }
-
-          // Store token if present; adjust key based on backend response
-          const token = data?.accessToken || data?.token || data?.data?.token || data?.access_token
-          if (token) {
-            setAuthToken(token)
-            console.log('Token stored successfully')
-          } else {
-            console.warn('No token found in response:', data)
-          }
-
-          // Save basic user data if available from response
-          const userData = data?.user || data?.data?.user || {}
-          const userProfile = {
-            name: (userData.name || sanitizedEmail.split('@')[0]).substring(0, 100), // Limit length
-            email: (userData.email || sanitizedEmail).substring(0, 100),
-            phone: (userData.phone || '').substring(0, 20),
-            address: (userData.address || '').substring(0, 200),
-            city: (userData.city || '').substring(0, 100),
-            state: (userData.state || '').substring(0, 100),
-            pincode: (userData.pincode || '').substring(0, 10)
-          }
-          localStorage.setItem('userProfile', JSON.stringify(userProfile))
-
-          // Trigger auth state change
-          if (typeof window !== 'undefined') {
-            window.dispatchEvent(new Event('authChanged'))
-          }
-
-          // Check if user is admin and redirect accordingly
-          if (sanitizedEmail === 'admin@robohatch.com') {
-            router.push('/admin')
-          } else {
-            router.push('/')
-          }
-        } catch (error) {
-          setLoginError('Unable to reach login service')
-        }
-      })()
-    } else {
-      // Sign Up: call register API
-      if (password !== confirmPassword) {
-        setLoginError('Passwords do not match')
+    try {
+      // Validate email
+      const sanitizedEmail = email.trim().toLowerCase()
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      
+      if (!emailRegex.test(sanitizedEmail)) {
+        setLoginError('Please enter a valid email address')
+        setIsLoading(false)
         return
       }
-      if (passwordErrors.length > 0) {
-        setLoginError('Please fix password requirements')
-        return
-      }
-      ;(async () => {
+
+      if (!isSignUp) {
+        // ========== LOGIN ==========
         try {
-          console.log('Sending registration request with:', { name, email: sanitizedEmail, password: '***' })
-          const resp = await fetch('/api/auth/register', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: name.substring(0, 100), email: sanitizedEmail, password }),
-          })
+          const response = await apiClient.post('/auth/login', {
+            email: sanitizedEmail,
+            password,
+          }, { requireAuth: false })
 
-          const data = await resp.json()
-          console.log('Registration response:', data)
-
-          if (!resp.ok) {
-            setLoginError(data?.error || 'Registration failed')
-            return
+          // Extract token from response
+          const token = response?.accessToken || response?.token || response?.data?.accessToken
+          
+          if (!token) {
+            throw new Error('No authentication token received')
           }
 
-          // Registration successful, store token if present and redirect
-          const token = data?.accessToken || data?.token || data?.data?.token || data?.access_token
-          if (token) {
-            setAuthToken(token)
-            console.log('Registration token stored successfully')
-          } else {
-            console.warn('No token found in registration response:', data)
-          }
+          // Store token
+          apiClient.setToken(token)
 
-          // Save user profile data from signup form or backend response
-          const userData = data?.user || data?.data?.user || {}
-          const userProfile = {
-            name: (name || userData.name || email.split('@')[0]).substring(0, 100),
-            email: (sanitizedEmail || userData.email || '').substring(0, 100),
-            phone: (userData.phone || '').substring(0, 20),
-            address: (userData.address || '').substring(0, 200),
-            city: (userData.city || '').substring(0, 100),
-            state: (userData.state || '').substring(0, 100),
-            pincode: (userData.pincode || '').substring(0, 10)
-          }
-          localStorage.setItem('userProfile', JSON.stringify(userProfile))
-          console.log('User profile saved:', userProfile)
+          // Dispatch auth change event
+          window.dispatchEvent(new Event('authChanged'))
 
-          // Trigger auth state change
-          if (typeof window !== 'undefined') {
-            window.dispatchEvent(new Event('authChanged'))
-          }
-
-          // Redirect to home page
-          router.push('/')
+          // Redirect to profile
+          router.push('/profile')
         } catch (error) {
-          console.error('Registration error:', error)
-          setLoginError('Unable to reach registration service')
+          setLoginError(error.message || 'Invalid email or password')
         }
-      })()
+      } else {
+        // ========== REGISTRATION ==========
+        
+        // Validate passwords match
+        if (password !== confirmPassword) {
+          setLoginError('Passwords do not match')
+          setIsLoading(false)
+          return
+        }
+
+        // Validate password strength
+        if (passwordErrors.length > 0) {
+          setLoginError('Please fix password requirements')
+          setIsLoading(false)
+          return
+        }
+
+        try {
+          const response = await apiClient.post('/auth/register', {
+            email: sanitizedEmail,
+            password,
+            name: name.trim() || undefined,
+          }, { requireAuth: false })
+
+          // Extract token from response
+          const token = response?.accessToken || response?.token || response?.data?.accessToken
+          
+          if (!token) {
+            throw new Error('No authentication token received')
+          }
+
+          // Store token
+          apiClient.setToken(token)
+
+          // Dispatch auth change event
+          window.dispatchEvent(new Event('authChanged'))
+
+          // Redirect to profile
+          router.push('/profile')
+        } catch (error) {
+          setLoginError(error.message || 'Registration failed. Please try again.')
+        }
+      }
+    } catch (error) {
+      setLoginError('An unexpected error occurred. Please try again.')
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -366,8 +320,19 @@ export default function Login() {
                 </div>
               )}
 
-              <button type="submit" className="w-full bg-gradient-to-r from-primary-orange to-[#ff3b29] text-white py-4 rounded-[12px] font-semibold text-base transition-all hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(255,94,77,0.3)] mt-2">
-                {isSignUp ? 'Sign Up' : 'Sign In'}
+              <button 
+                type="submit" 
+                disabled={isLoading}
+                className="w-full bg-gradient-to-r from-primary-orange to-[#ff3b29] text-white py-4 rounded-[12px] font-semibold text-base transition-all hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(255,94,77,0.3)] mt-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+              >
+                {isLoading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <i className="fas fa-spinner fa-spin"></i>
+                    {isSignUp ? 'Creating Account...' : 'Signing In...'}
+                  </span>
+                ) : (
+                  isSignUp ? 'Sign Up' : 'Sign In'
+                )}
               </button>
             </form>
 

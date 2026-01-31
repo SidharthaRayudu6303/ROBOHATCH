@@ -1,13 +1,14 @@
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000'
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' })
   }
 
   try {
-    const { email, password, name } = req.body || {}
+    const { email, password, name, phone } = req.body || {}
     
-    // Only email and password are required based on the example
-    if (!email || !password) {
+    if (!email || !password || !name) {
       return res.status(400).json({ error: 'Email and password are required' })
     }
 

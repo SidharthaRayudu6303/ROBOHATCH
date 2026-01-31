@@ -3,50 +3,62 @@ import Head from 'next/head'
 import { useRouter } from 'next/router'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
-import { getAuthToken } from '../utils/api'
+import apiClient from '../utils/apiClient'
 
 export default function Profile() {
   const router = useRouter()
-  const [user, setUser] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    address: '',
-    city: '',
-    state: '',
-    pincode: ''
-  })
+  const [user, setUser] = useState(null)
   const [isEditing, setIsEditing] = useState(false)
   const [orders, setOrders] = useState([])
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
-    // Check authentication
-    const token = getAuthToken()
-    if (!token) {
-      router.push('/login')
-      return
+    const loadProfile = async () => {
+      try {
+        // Check authentication
+        if (!apiClient.isAuthenticated()) {
+          router.push('/login')
+          return
+        }
+
+        setIsLoading(true)
+        
+        // Fetch user profile from backend
+        const userData = await apiClient.get('/auth/profile')
+        setUser(userData?.data || userData)
+
+        // Note: Orders will be fetched from backend in future phase
+        // For now, keep localStorage as fallback
+        const savedOrders = localStorage.getItem('orderHistory')
+        if (savedOrders) {
+          setOrders(JSON.parse(savedOrders))
+        }
+      } catch (err) {
+        setError(err.message)
+        if (err.message.includes('Unauthorized')) {
+          router.push('/login')
+        }
+      } finally {
+        setIsLoading(false)
+      }
     }
 
-    // Load user data from localStorage
-    const savedUser = localStorage.getItem('userProfile')
-    if (savedUser) {
-      setUser(JSON.parse(savedUser))
+    loadProfile()
+  }, [router])
+
+  const handleSave = async () => {
+    try {
+      // Update profile on backend (when endpoint is available)
+      // await apiClient.put('/auth/profile', user)
+      
+      // For now, save to localStorage as fallback
+      localStorage.setItem('userProfile', JSON.stringify(user))
+      setIsEditing(false)
+      alert('Profile updated successfully!')
+    } catch (err) {
+      alert('Failed to update profile: ' + err.message)
     }
-
-    // Load order history
-    const savedOrders = localStorage.getItem('orderHistory')
-    if (savedOrders) {
-      setOrders(JSON.parse(savedOrders))
-    }
-
-    setIsLoading(false)
-  }, [])
-
-  const handleSave = () => {
-    localStorage.setItem('userProfile', JSON.stringify(user))
-    setIsEditing(false)
-    alert('Profile updated successfully!')
   }
 
   const handleChange = (field, value) => {
@@ -54,14 +66,7 @@ export default function Profile() {
   }
 
   const handleLogout = () => {
-    localStorage.removeItem('auth_token')
-    localStorage.removeItem('userProfile')
-    
-    // Trigger auth state change
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new Event('authChanged'))
-    }
-    
+    apiClient.removeToken()
     router.push('/')
   }
 
@@ -69,6 +74,17 @@ export default function Profile() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <i className="fas fa-spinner fa-spin text-4xl text-primary-orange"></i>
+      </div>
+    )
+  }
+
+  if (error && !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <i className="fas fa-exclamation-triangle text-4xl text-red-500 mb-4"></i>
+          <p className="text-xl text-gray-700">{error}</p>
+        </div>
       </div>
     )
   }
