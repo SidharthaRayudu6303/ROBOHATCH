@@ -343,16 +343,10 @@ export default function Login() {
                 </div>
                 <span className="relative bg-white px-4 text-sm text-[#999]">Or continue with</span>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <button className="flex items-center justify-center gap-3 bg-white border-2 border-[#e0e0e0] text-[#555] py-3 px-4 rounded-lg font-medium transition-all hover:border-primary-orange hover:text-primary-orange hover:-translate-y-0.5">
-                  <i className="fab fa-google text-lg"></i>
-                  Google
-                </button>
-                <button className="flex items-center justify-center gap-3 bg-white border-2 border-[#e0e0e0] text-[#555] py-3 px-4 rounded-lg font-medium transition-all hover:border-primary-orange hover:text-primary-orange hover:-translate-y-0.5">
-                  <i className="fab fa-facebook-f text-lg"></i>
-                  Facebook
-                </button>
-              </div>
+              <button className="w-full flex items-center justify-center gap-3 bg-white border-2 border-[#e0e0e0] text-[#555] py-3 px-4 rounded-lg font-medium transition-all hover:border-primary-orange hover:text-primary-orange hover:-translate-y-0.5">
+                <i className="fab fa-google text-lg"></i>
+                Google
+              </button>
             </div>
           </div>
         </div>
