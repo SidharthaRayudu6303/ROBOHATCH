@@ -14,6 +14,7 @@ export default function Login() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [email, setEmail] = useState('')
   const [name, setName] = useState('')
+  const [mobile, setMobile] = useState('')
   const [passwordErrors, setPasswordErrors] = useState([])
   const [passwordStrength, setPasswordStrength] = useState({ score: 0, label: '', color: '' })
   const [loginError, setLoginError] = useState('')
@@ -136,6 +137,7 @@ export default function Login() {
             email: sanitizedEmail,
             password,
             name: name.trim() || undefined,
+            phone: mobile.trim() || undefined,
           }, { requireAuth: false })
 
           // Extract token from response
@@ -206,6 +208,21 @@ export default function Login() {
                     placeholder="Enter your full name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
+                    className="w-full px-4 py-3.5 border-2 border-border-color rounded-lg transition-all focus:outline-none focus:border-primary-orange focus:ring-4 focus:ring-primary-orange/10"
+                  />
+                </div>
+              )}
+
+              {isSignUp && (
+                <div className="flex flex-col">
+                  <label htmlFor="mobile" className="text-[#2c3e50] mb-2 font-medium text-sm">Mobile Number (Optional)</label>
+                  <input 
+                    type="tel" 
+                    id="mobile" 
+                    placeholder="Enter your mobile number"
+                    value={mobile}
+                    onChange={(e) => setMobile(e.target.value)}
+                    pattern="[0-9]{10}"
                     className="w-full px-4 py-3.5 border-2 border-border-color rounded-lg transition-all focus:outline-none focus:border-primary-orange focus:ring-4 focus:ring-primary-orange/10"
                   />
                 </div>

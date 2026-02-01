@@ -21,6 +21,9 @@ export default async function handler(req, res) {
     if (name) {
       requestBody.name = name
     }
+    if (phone) {
+      requestBody.phone = phone
+    }
 
     const response = await fetch(backendUrl, {
       method: 'POST',
