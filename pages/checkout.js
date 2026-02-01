@@ -6,13 +6,12 @@ import Link from 'next/link'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import { useAuth } from '../contexts/AuthContext'
-import { cartApi } from '../utils/cartApi'
-import { ordersApi } from '../utils/ordersApi'
+import { getCart, createOrder } from '../lib/api'
 
 export default function Checkout() {
   const router = useRouter()
   const { isAuthenticated, isLoading: authLoading } = useAuth()
-  const [cartItems, setCartItems] = useState([])
+  const [cartData, setCartData] = useState(null)
   const [isLoadingCart, setIsLoadingCart] = useState(true)
   const [error, setError] = useState(null)
   const [formData, setFormData] = useState({
@@ -38,11 +37,12 @@ export default function Checkout() {
   const [orderStatus, setOrderStatus] = useState(null)
   const [orderId, setOrderId] = useState(null)
 
-  const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
-  const deliveryCharges = 100
-  const shipping = subtotal >= 1000 ? 0 : deliveryCharges
-  const tax = subtotal * 0.08
-  const total = subtotal + shipping + tax
+  // ✅ Get totals from backend cartData - no calculations here
+  const cartItems = cartData?.items || []
+  const subtotal = cartData?.subtotal || 0
+  const shipping = cartData?.shipping || 0
+  const tax = cartData?.tax || 0
+  const total = cartData?.total || 0
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -56,20 +56,21 @@ export default function Checkout() {
     }
   }, [isAuthenticated])
 
-  const loadCart = () => {
+  const loadCart = async () => {
     try {
       setIsLoadingCart(true)
       setError(null)
-      if (typeof window !== 'undefined') {
-        const cart = JSON.parse(localStorage.getItem('cart') || '[]')
-        setCartItems(cart)
-        
-        if (!cart || cart.length === 0) {
-          router.push('/cart')
-        }
+      
+      // ✅ Fetch cart from backend with calculated totals
+      const data = await getCart()
+      setCartData(data)
+      
+      if (!data?.items || data.items.length === 0) {
+        router.push('/cart')
       }
     } catch (err) {
       setError('Failed to load cart')
+      console.error('Cart load error:', err)
     } finally {
       setIsLoadingCart(false)
     }
@@ -143,10 +144,15 @@ export default function Checkout() {
         orderNotes: formData.orderNotes,
       }
       
-      const result = await ordersApi.checkout(orderData)
+      // ✅ POST /api/v1/orders with Idempotency-Key
+      // Backend: Creates order, clears cart, returns orderId
+      const result = await createOrder(orderData)
       
       setOrderId(result.orderId)
       setOrderStatus('success')
+      
+      // Trigger cart update event
+      window.dispatchEvent(new Event('cartUpdated'))
     } catch (err) {
       setError(err.message || 'Failed to place order. Please try again.')
       setOrderStatus('failed')

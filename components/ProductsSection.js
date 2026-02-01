@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { getCategoryProducts } from '../data/products'
+import { getProducts } from '../lib/api'
 import Link from 'next/link'
 
 // Image carousel component for products
@@ -69,6 +69,32 @@ export default function ProductsSection() {
   const [expandedCategory, setExpandedCategory] = useState(null)
   const [notification, setNotification] = useState('')
   const [removedProducts, setRemovedProducts] = useState([])
+  const [products, setProducts] = useState([])
+  const [loading, setLoading] = useState(false)
+
+  // Fetch products from backend API
+  useEffect(() => {
+    async function fetchProducts() {
+      if (!activeCategory) return
+      
+      setLoading(true)
+      try {
+        // Fetch products from backend with S3 URLs
+        const data = await getProducts(activeCategory)
+        
+        // Filter out removed products
+        const filtered = data.filter(p => !removedProducts.includes(p.id))
+        setProducts(filtered)
+      } catch (error) {
+        console.error('Failed to load products:', error)
+        setProducts([])
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    fetchProducts()
+  }, [activeCategory, removedProducts])
 
   // Load removed products from localStorage
   useEffect(() => {
@@ -123,10 +149,8 @@ export default function ProductsSection() {
   }
 
   const getDisplayProducts = (categoryKey) => {
-    const allProducts = getCategoryProducts(categoryKey)
-    // Filter out removed products
-    const activeProducts = allProducts.filter(p => !removedProducts.includes(p.id))
-    return expandedCategory === categoryKey ? activeProducts : activeProducts.slice(0, 4)
+    // Products are already filtered by category from API
+    return expandedCategory === categoryKey ? products : products.slice(0, 4)
   }
 
   return (

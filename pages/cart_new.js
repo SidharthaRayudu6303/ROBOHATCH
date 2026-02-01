@@ -41,10 +41,14 @@ export default function Cart() {
     window.dispatchEvent(new Event('cartUpdated'))
   }
 
+  // ✅ CORRECT: Get totals from backend (if using API)
+  // For legacy compatibility, keep calculations but add warning comment
+  // TODO: Replace with backend API call - cartData.subtotal, cartData.total
   const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
   const shipping = subtotal > 0 ? 10 : 0
   const tax = subtotal * 0.08
   const total = subtotal + shipping + tax
+  // ⚠️ WARNING: This page uses client-side calculations. Use pages/cart.js instead.
 
   return (
     <>

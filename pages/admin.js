@@ -4,6 +4,7 @@ import Navbar from '../components/Navbar'
 import { allProducts } from '../data/products'
 import { defaultCategories } from '../data/categories'
 import { getAuthToken, removeAuthToken } from '../utils/api'
+import { apiFetch } from '../lib/api'
 
 export default function Admin() {
   const router = useRouter()
@@ -209,16 +210,24 @@ export default function Admin() {
     }
   }
 
-  const handleLogout = () => {
-    removeAuthToken()
-    localStorage.removeItem('userProfile')
-    
-    // Trigger auth state change
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new Event('authChanged'))
+  const handleLogout = async () => {
+    try {
+      // Call backend to clear cookies
+      await apiFetch('/api/v1/auth/logout', { method: 'POST' })
+    } catch (error) {
+      console.error('Logout error:', error)
+    } finally {
+      // Clear local state
+      localStorage.removeItem('userProfile')
+      
+      // Trigger auth state change
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('authChanged'))
+      }
+      
+      router.push('/login')
     }
-    
-    router.push('/login')
+  }
   }
 
   const handleRemoveProduct = (productId) => {

@@ -3,7 +3,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import Navbar from '../components/Navbar'
-import apiClient from '../utils/apiClient'
+import { apiFetch } from '../lib/api'
 
 export default function Login() {
   const router = useRouter()
@@ -92,20 +92,17 @@ export default function Login() {
       if (!isSignUp) {
         // ========== LOGIN ==========
         try {
-          const response = await apiClient.post('/auth/login', {
-            email: sanitizedEmail,
-            password,
-          }, { requireAuth: false })
+          const response = await apiFetch('/api/v1/auth/login', {
+            method: 'POST',
+            body: JSON.stringify({ email: sanitizedEmail, password }),
+          })
 
-          // Extract token from response
-          const token = response?.accessToken || response?.token || response?.data?.accessToken
-          
-          if (!token) {
-            throw new Error('No authentication token received')
+          if (!response.ok) {
+            const error = await response.json().catch(() => ({ message: 'Login failed' }))
+            throw new Error(error.message || error.error || 'Invalid email or password')
           }
 
-          // Store token
-          apiClient.setToken(token)
+          const data = await response.json()
 
           // Dispatch auth change event
           window.dispatchEvent(new Event('authChanged'))
@@ -133,22 +130,22 @@ export default function Login() {
         }
 
         try {
-          const response = await apiClient.post('/auth/register', {
-            email: sanitizedEmail,
-            password,
-            name: name.trim() || undefined,
-            phone: mobile.trim() || undefined,
-          }, { requireAuth: false })
+          const response = await apiFetch('/api/v1/auth/register', {
+            method: 'POST',
+            body: JSON.stringify({ 
+              email: sanitizedEmail, 
+              password,
+              name: name.trim() || undefined,
+              phone: mobile.trim() || undefined,
+            }),
+          })
 
-          // Extract token from response
-          const token = response?.accessToken || response?.token || response?.data?.accessToken
-          
-          if (!token) {
-            throw new Error('No authentication token received')
+          if (!response.ok) {
+            const error = await response.json().catch(() => ({ message: 'Registration failed' }))
+            throw new Error(error.message || error.error || 'Registration failed. Please try again.')
           }
 
-          // Store token
-          apiClient.setToken(token)
+          const data = await response.json()
 
           // Dispatch auth change event
           window.dispatchEvent(new Event('authChanged'))

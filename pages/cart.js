@@ -4,9 +4,12 @@ import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import Head from 'next/head'
 import Link from 'next/link'
+import { getCart, updateCartItem, removeFromCart } from '../lib/api'
 
 export default function Cart() {
-  const [cartItems, setCartItems] = useState([])
+  const [cartData, setCartData] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     loadCart()
@@ -19,35 +22,53 @@ export default function Cart() {
     }
   }, [])
 
-  const loadCart = () => {
-    if (typeof window !== 'undefined') {
-      const cart = JSON.parse(localStorage.getItem('cart') || '[]')
-      setCartItems(cart)
+  const loadCart = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      // ✅ Fetch cart from backend with calculated totals
+      const data = await getCart()
+      setCartData(data)
+    } catch (err) {
+      console.error('Failed to load cart:', err)
+      setError('Failed to load cart')
+    } finally {
+      setLoading(false)
     }
   }
 
-  const updateQuantity = (id, newQuantity) => {
+  const updateQuantity = async (itemId, newQuantity) => {
     if (newQuantity < 1) return
-    const updatedCart = cartItems.map(item => 
-      item.id === id ? { ...item, quantity: newQuantity } : item
-    )
-    setCartItems(updatedCart)
-    localStorage.setItem('cart', JSON.stringify(updatedCart))
-    window.dispatchEvent(new Event('cartUpdated'))
+    
+    try {
+      // ✅ Update on backend - backend recalculates totals
+      await updateCartItem(itemId, { quantity: newQuantity })
+      await loadCart() // Reload to get updated totals from backend
+      window.dispatchEvent(new Event('cartUpdated'))
+    } catch (err) {
+      console.error('Failed to update quantity:', err)
+      alert('Failed to update item quantity')
+    }
   }
 
-  const removeItem = (id) => {
-    const updatedCart = cartItems.filter(item => item.id !== id)
-    setCartItems(updatedCart)
-    localStorage.setItem('cart', JSON.stringify(updatedCart))
-    window.dispatchEvent(new Event('cartUpdated'))
+  const removeItem = async (itemId) => {
+    try {
+      // ✅ Remove from backend - backend recalculates totals
+      await removeFromCart(itemId)
+      await loadCart() // Reload to get updated totals from backend
+      window.dispatchEvent(new Event('cartUpdated'))
+    } catch (err) {
+      console.error('Failed to remove item:', err)
+      alert('Failed to remove item from cart')
+    }
   }
 
-  const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
-  const deliveryCharges = 100
-  const shipping = subtotal >= 1000 ? 0 : deliveryCharges
-  const tax = subtotal * 0.08
-  const total = subtotal + shipping + tax
+  // ✅ No price calculations here - all come from backend
+  const cartItems = cartData?.items || []
+  const subtotal = cartData?.subtotal || 0
+  const shipping = cartData?.shipping || 0
+  const tax = cartData?.tax || 0
+  const total = cartData?.total || 0
 
   return (
     <>
@@ -65,7 +86,24 @@ export default function Cart() {
               <p className="text-sm sm:text-base text-gray-600">{cartItems.length} {cartItems.length === 1 ? 'item' : 'items'} in your cart</p>
             </div>
 
-            {cartItems.length === 0 ? (
+            {loading ? (
+              <div className="flex justify-center items-center py-20">
+                <i className="fas fa-spinner fa-spin text-5xl text-primary-orange"></i>
+              </div>
+            ) : error ? (
+              <div className="bg-white rounded-[20px] p-12 text-center shadow-[0_10px_30px_rgba(0,0,0,0.08)]">
+                <i className="fas fa-exclamation-triangle text-6xl text-red-500 mb-6"></i>
+                <h2 className="text-2xl font-bold text-dark-brown mb-3">Error Loading Cart</h2>
+                <p className="text-gray-600 mb-8">{error}</p>
+                <button 
+                  onClick={loadCart}
+                  className="inline-flex items-center gap-2 bg-primary-orange text-white px-8 py-4 rounded-full font-semibold shadow-[0_4px_15px_rgba(242,92,5,0.3)] hover:bg-hover-orange transition-all"
+                >
+                  <i className="fas fa-sync-alt"></i>
+                  Retry
+                </button>
+              </div>
+            ) : cartItems.length === 0 ? (
               <div className="bg-white rounded-[20px] p-8 sm:p-12 md:p-16 lg:p-20 text-center shadow-[0_10px_30px_rgba(0,0,0,0.08)]">
                 <i className="fas fa-shopping-cart text-5xl sm:text-6xl md:text-7xl lg:text-8xl text-gray-300 mb-4 sm:mb-6 md:mb-8"></i>
                 <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-dark-brown mb-2 sm:mb-3">Your cart is empty</h2>

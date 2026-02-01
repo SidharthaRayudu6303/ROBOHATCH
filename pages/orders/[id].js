@@ -181,7 +181,8 @@ export default function OrderDetail() {
                       </div>
                       <div className="text-right">
                         <p className="text-lg font-bold text-primary-orange">
-                          ₹{(item.price * item.quantity).toFixed(2)}
+                          {/* TODO: Backend should provide item.lineTotal */}
+                          ₹{item.lineTotal ? item.lineTotal.toFixed(2) : (item.price * item.quantity).toFixed(2)}
                         </p>
                       </div>
                     </div>

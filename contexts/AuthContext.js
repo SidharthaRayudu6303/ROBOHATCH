@@ -1,9 +1,8 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
+import { checkAuth, apiFetch } from '../lib/api';
 
 const AuthContext = createContext(null);
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000/api/v1';
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -14,17 +13,11 @@ export function AuthProvider({ children }) {
 
   const fetchUser = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/me`, {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setUser(data);
+      // ✅ Uses httpOnly cookies, no localStorage
+      const userData = await checkAuth();
+      
+      if (userData) {
+        setUser(userData);
         return true;
       } else {
         setUser(null);
@@ -42,12 +35,8 @@ export function AuthProvider({ children }) {
 
   const login = async (credentials) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      const response = await apiFetch('/api/v1/auth/login', {
         method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(credentials),
       });
 
@@ -65,12 +54,8 @@ export function AuthProvider({ children }) {
 
   const logout = async () => {
     try {
-      await fetch(`${API_BASE_URL}/auth/logout`, {
+      await apiFetch('/api/v1/auth/logout', {
         method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
       });
     } catch (error) {
       // Ignore errors
@@ -82,12 +67,8 @@ export function AuthProvider({ children }) {
 
   const refreshAuth = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+      const response = await apiFetch('/api/v1/auth/refresh', {
         method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
       });
 
       if (response.ok) {

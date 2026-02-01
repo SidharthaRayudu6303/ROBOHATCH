@@ -252,7 +252,8 @@ export default function Payment() {
                           <h3 className="font-semibold text-gray-900">{item.name}</h3>
                           <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
                           <p className="text-sm font-bold text-primary-orange mt-1">
-                            ₹{(item.price * item.quantity).toFixed(2)}
+                            {/* TODO: Backend should provide item.lineTotal */}
+                            ₹{item.lineTotal ? item.lineTotal.toFixed(2) : (item.price * item.quantity).toFixed(2)}
                           </p>
                         </div>
                       </div>

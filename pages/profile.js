@@ -4,6 +4,7 @@ import { useRouter } from 'next/router'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import apiClient from '../utils/apiClient'
+import { apiFetch } from '../lib/api'
 
 export default function Profile() {
   const router = useRouter()
@@ -65,9 +66,17 @@ export default function Profile() {
     setUser({ ...user, [field]: value })
   }
 
-  const handleLogout = () => {
-    apiClient.removeToken()
-    router.push('/')
+  const handleLogout = async () => {
+    try {
+      // Call backend to clear cookies
+      await apiFetch('/api/v1/auth/logout', { method: 'POST' })
+    } catch (error) {
+      console.error('Logout error:', error)
+    } finally {
+      // Clear local state and redirect
+      window.dispatchEvent(new Event('authChanged'))
+      router.push('/')
+    }
   }
 
   if (isLoading) {

@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/router'
-import apiClient from '../utils/apiClient'
+import { checkAuth } from '../lib/api'
 
 export default function Navbar({ hideLogin = false, hideMenu = false, hideCart = false }) {
   const router = useRouter()
@@ -16,16 +16,21 @@ export default function Navbar({ hideLogin = false, hideMenu = false, hideCart =
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
 
   useEffect(() => {
-    // Check authentication status with backend
-    const checkAuth = async () => {
+    // Check authentication status with backend (no localStorage)
+    const verifyAuth = async () => {
       setIsCheckingAuth(true)
       try {
-        // Verify auth with backend (uses cookies)
-        const userData = await apiClient.get('/auth/profile')
-        setIsAuthenticated(true)
-        setUser(userData)
+        // ✅ Uses httpOnly cookies - backend returns user data or 401
+        const userData = await checkAuth()
+        
+        if (userData) {
+          setIsAuthenticated(true)
+          setUser(userData)
+        } else {
+          setIsAuthenticated(false)
+          setUser(null)
+        }
       } catch (error) {
-        // Not authenticated or token expired
         setIsAuthenticated(false)
         setUser(null)
       } finally {
@@ -33,10 +38,10 @@ export default function Navbar({ hideLogin = false, hideMenu = false, hideCart =
       }
     }
     
-    checkAuth()
+    verifyAuth()
     
     // Listen for auth changes
-    window.addEventListener('authChanged', checkAuth)
+    window.addEventListener('authChanged', verifyAuth)
     
     // Load cart count on mount
     updateCartCount()
@@ -57,7 +62,7 @@ export default function Navbar({ hideLogin = false, hideMenu = false, hideCart =
     window.addEventListener('updatesChanged', handleUpdatesChange)
     
     return () => {
-      window.removeEventListener('authChanged', checkAuth)
+      window.removeEventListener('authChanged', verifyAuth)
       window.removeEventListener('cartUpdated', handleCartUpdate)
       window.removeEventListener('updatesChanged', handleUpdatesChange)
     }

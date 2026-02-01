@@ -16,32 +16,31 @@ export default function Jewelry() {
     const handleProductsUpdate = () => {
       loadProducts()
     }
-    
+     
     window.addEventListener('productsUpdated', handleProductsUpdate)
     return () => window.removeEventListener('productsUpdated', handleProductsUpdate)
   }, [])
 
   const loadProducts = () => {
-    const removed = JSON.parse(localStorage.getItem('removedProducts') || '[]')
-    setRemovedProducts(removed)
-    const allProducts = getCategoryProducts('jewelry').filter(p => !removed.includes(p.id))
+    // Load products from static data (removed products handled by backend)
+    const allProducts = getCategoryProducts('jewelry')
     setProducts(allProducts)
   }
 
-  const addToCart = (product) => {
-    const cart = JSON.parse(localStorage.getItem('cart') || '[]')
-    const existingItemIndex = cart.findIndex(item => item.id === product.id)
-    
-    if (existingItemIndex > -1) {
-      cart[existingItemIndex].quantity += 1
-    } else {
-      cart.push({ ...product, quantity: 1 })
+  const addToCart = async (product) => {
+    try {
+      // ✅ Use backend API - NO localStorage
+      const { addToCart: addToCartAPI } = await import('../lib/api')
+      await addToCartAPI(product.id, 1)
+      
+      setNotification(`${product.name} added to cart!`)
+      setTimeout(() => setNotification(''), 3000)
+      window.dispatchEvent(new Event('cartUpdated'))
+    } catch (error) {
+      console.error('Failed to add to cart:', error)
+      setNotification('Failed to add to cart. Please try again.')
+      setTimeout(() => setNotification(''), 3000)
     }
-    
-    localStorage.setItem('cart', JSON.stringify(cart))
-    setNotification(`${product.name} added to cart!`)
-    setTimeout(() => setNotification(''), 3000)
-    window.dispatchEvent(new Event('cartUpdated'))
   }
 
   return (
