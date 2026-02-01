@@ -3,12 +3,12 @@ import { useState, useEffect } from 'react'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import Link from 'next/link'
-import { getCategoryProducts } from '../data/products'
+import { getProducts, addToCart as apiAddToCart } from '../lib/api'
 
 export default function Flowerpots() {
   const [notification, setNotification] = useState('')
   const [products, setProducts] = useState([])
-  const [removedProducts, setRemovedProducts] = useState([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     loadProducts()
@@ -21,27 +21,28 @@ export default function Flowerpots() {
     return () => window.removeEventListener('productsUpdated', handleProductsUpdate)
   }, [])
 
-  const loadProducts = () => {
-    const removed = JSON.parse(localStorage.getItem('removedProducts') || '[]')
-    setRemovedProducts(removed)
-    const allProducts = getCategoryProducts('flowerpots').filter(p => !removed.includes(p.id))
-    setProducts(allProducts)
+  const loadProducts = async () => {
+    try {
+      const data = await getProducts('flowerpots')
+      setProducts(data)
+    } catch (error) {
+      console.error('Failed to load products:', error)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const addToCart = (product) => {
-    const cart = JSON.parse(localStorage.getItem('cart') || '[]')
-    const existingItemIndex = cart.findIndex(item => item.id === product.id)
-    
-    if (existingItemIndex > -1) {
-      cart[existingItemIndex].quantity += 1
-    } else {
-      cart.push({ ...product, quantity: 1 })
+  const addToCart = async (product) => {
+    try {
+      await apiAddToCart(product.id, 1)
+      setNotification(`${product.name} added to cart!`)
+      setTimeout(() => setNotification(''), 3000)
+      window.dispatchEvent(new Event('cartUpdated'))
+    } catch (error) {
+      console.error('Failed to add to cart:', error)
+      setNotification('Failed to add to cart. Please try again.')
+      setTimeout(() => setNotification(''), 3000)
     }
-    
-    localStorage.setItem('cart', JSON.stringify(cart))
-    setNotification(`${product.name} added to cart!`)
-    setTimeout(() => setNotification(''), 3000)
-    window.dispatchEvent(new Event('cartUpdated'))
   }
 
   return (
@@ -61,8 +62,14 @@ export default function Flowerpots() {
             {products.map((product) => (
               <div key={product.id} className="bg-white rounded-[15px] overflow-hidden shadow-[0_5px_20px_rgba(0,0,0,0.08)] hover:-translate-y-2.5 hover:shadow-[0_15px_40px_rgba(0,0,0,0.15)] transition-all duration-300">
                 <Link href={`/product/${product.id}`}>
-                  <div className="aspect-square bg-gradient-to-br from-soft-peach to-primary-orange p-8 flex items-center justify-center cursor-pointer">
-                    <i className={`fas ${product.icon} text-6xl text-white`}></i>
+                  <div className="aspect-square bg-gradient-to-br from-soft-peach to-primary-orange overflow-hidden cursor-pointer">
+                    {product.imageUrl ? (
+                      <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <i className="fas fa-seedling text-6xl text-white"></i>
+                      </div>
+                    )}
                   </div>
                   <div className="p-6">
                     <h3 className="text-xl font-semibold text-dark-brown mb-2">{product.name}</h3>

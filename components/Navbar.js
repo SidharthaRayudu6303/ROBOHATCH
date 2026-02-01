@@ -3,47 +3,19 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/router'
-import { checkAuth } from '../lib/api'
+import { useAuth } from '../contexts/AuthContext'
+import { getCart } from '../lib/api'
 
 export default function Navbar({ hideLogin = false, hideMenu = false, hideCart = false }) {
   const router = useRouter()
+  const { user, isAuthenticated, isLoading: authLoading, logout } = useAuth() // ✅ Single source of truth
   const [cartCount, setCartCount] = useState(0)
   const [updates, setUpdates] = useState([])
   const [currentUpdateIndex, setCurrentUpdateIndex] = useState(0)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [user, setUser] = useState(null)
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true)
 
   useEffect(() => {
-    // Check authentication status with backend (no localStorage)
-    const verifyAuth = async () => {
-      setIsCheckingAuth(true)
-      try {
-        // ✅ Uses httpOnly cookies - backend returns user data or 401
-        const userData = await checkAuth()
-        
-        if (userData) {
-          setIsAuthenticated(true)
-          setUser(userData)
-        } else {
-          setIsAuthenticated(false)
-          setUser(null)
-        }
-      } catch (error) {
-        setIsAuthenticated(false)
-        setUser(null)
-      } finally {
-        setIsCheckingAuth(false)
-      }
-    }
-    
-    verifyAuth()
-    
-    // Listen for auth changes
-    window.addEventListener('authChanged', verifyAuth)
-    
-    // Load cart count on mount
+    // Load cart count from backend on mount
     updateCartCount()
     
     // Listen for cart updates
@@ -62,7 +34,6 @@ export default function Navbar({ hideLogin = false, hideMenu = false, hideCart =
     window.addEventListener('updatesChanged', handleUpdatesChange)
     
     return () => {
-      window.removeEventListener('authChanged', verifyAuth)
       window.removeEventListener('cartUpdated', handleCartUpdate)
       window.removeEventListener('updatesChanged', handleUpdatesChange)
     }
@@ -78,11 +49,15 @@ export default function Navbar({ hideLogin = false, hideMenu = false, hideCart =
     }
   }, [updates.length])
 
-  const updateCartCount = () => {
-    if (typeof window !== 'undefined') {
-      const cart = JSON.parse(localStorage.getItem('cart') || '[]')
-      const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0)
+  // ✅ BACKEND CART COUNT - No localStorage
+  const updateCartCount = async () => {
+    try {
+      const cartData = await getCart()
+      const totalItems = cartData.items.reduce((sum, item) => sum + item.quantity, 0)
       setCartCount(totalItems)
+    } catch (error) {
+      // User not logged in or cart empty
+      setCartCount(0)
     }
   }
 
@@ -94,9 +69,10 @@ export default function Navbar({ hideLogin = false, hideMenu = false, hideCart =
     }
   }
 
-  const handleLogout = () => {
-    // Remove token
-    apiClient.removeToken()
+  const handleLogout = async () => {
+    await logout()
+    setCartCount(0)
+  }
     
     // Clear any user data
     setIsAuthenticated(false)

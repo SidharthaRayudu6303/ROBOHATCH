@@ -4,32 +4,38 @@ import Head from 'next/head'
 import { useRouter } from 'next/router'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
-import { getAuthToken } from '../utils/api'
+import { useAuth } from '../contexts/AuthContext'
+import { apiGet } from '../lib/api'
 
 export default function CancelledOrders() {
   const router = useRouter()
+  const { user, isAuthenticated } = useAuth()
   const [cancelledOrders, setCancelledOrders] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [selectedOrder, setSelectedOrder] = useState(null)
 
   useEffect(() => {
     // Check authentication
-    const token = getAuthToken()
-    if (!token) {
+    if (!isAuthenticated) {
       router.push('/login')
       return
     }
 
     loadCancelledOrders()
-  }, [router])
+  }, [isAuthenticated, router])
 
-  const loadCancelledOrders = () => {
-    // Load order history and filter cancelled orders
-    const orderHistory = JSON.parse(localStorage.getItem('orderHistory') || '[]')
-    const cancelled = orderHistory.filter(order => order.status.toLowerCase() === 'cancelled')
-    // Sort by date, newest first
-    const sortedOrders = cancelled.sort((a, b) => b.id - a.id)
-    setCancelledOrders(sortedOrders)
+  const loadCancelledOrders = async () => {
+    try {
+      // Load orders from backend and filter cancelled
+      const response = await apiGet('/orders?status=cancelled')
+      const cancelled = response.orders || []
+      // Sort by date, newest first
+      const sortedOrders = cancelled.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      setCancelledOrders(sortedOrders)
+    } catch (error) {
+      console.error('Failed to load cancelled orders:', error)
+      setCancelledOrders([])
+    }
     setIsLoading(false)
   }
 

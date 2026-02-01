@@ -3,12 +3,12 @@ import { useState, useEffect } from 'react'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import Link from 'next/link'
-import { getCategoryProducts } from '../data/products'
+import { getProducts, addToCart as apiAddToCart } from '../lib/api'
 
 export default function Jewelry() {
   const [notification, setNotification] = useState('')
   const [products, setProducts] = useState([])
-  const [removedProducts, setRemovedProducts] = useState([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     loadProducts()
@@ -21,18 +21,20 @@ export default function Jewelry() {
     return () => window.removeEventListener('productsUpdated', handleProductsUpdate)
   }, [])
 
-  const loadProducts = () => {
-    // Load products from static data (removed products handled by backend)
-    const allProducts = getCategoryProducts('jewelry')
-    setProducts(allProducts)
+  const loadProducts = async () => {
+    try {
+      const data = await getProducts('jewelry')
+      setProducts(data)
+    } catch (error) {
+      console.error('Failed to load products:', error)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const addToCart = async (product) => {
     try {
-      // ✅ Use backend API - NO localStorage
-      const { addToCart: addToCartAPI } = await import('../lib/api')
-      await addToCartAPI(product.id, 1)
-      
+      await apiAddToCart(product.id, 1)
       setNotification(`${product.name} added to cart!`)
       setTimeout(() => setNotification(''), 3000)
       window.dispatchEvent(new Event('cartUpdated'))
@@ -60,8 +62,14 @@ export default function Jewelry() {
             {products.map((product) => (
               <div key={product.id} className="bg-white rounded-[15px] overflow-hidden shadow-[0_5px_20px_rgba(0,0,0,0.08)] hover:-translate-y-2.5 hover:shadow-[0_15px_40px_rgba(0,0,0,0.15)] transition-all duration-300">
                 <Link href={`/product/${product.id}`}>
-                  <div className="aspect-square bg-gradient-to-br from-soft-peach to-primary-orange p-8 flex items-center justify-center cursor-pointer">
-                    <i className={`fas ${product.icon} text-6xl text-white`}></i>
+                  <div className="aspect-square bg-gradient-to-br from-soft-peach to-primary-orange overflow-hidden cursor-pointer">
+                    {product.imageUrl ? (
+                      <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <i className="fas fa-gem text-6xl text-white"></i>
+                      </div>
+                    )}
                   </div>
                   <div className="p-6">
                     <h3 className="text-xl font-semibold text-dark-brown mb-2">{product.name}</h3>

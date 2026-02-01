@@ -4,8 +4,8 @@ import { useRouter } from 'next/router'
 import Navbar from '../../../components/Navbar'
 import Footer from '../../../components/Footer'
 import Link from 'next/link'
-import { getCategoryProducts } from '../../../data/products'
 import Head from 'next/head'
+import { apiGet, addToCart as apiAddToCart } from '../../../lib/api'
 
 export default function ProductCategoryItem() {
   const router = useRouter()
@@ -20,66 +20,68 @@ export default function ProductCategoryItem() {
     }
   }, [category, item])
 
-  const loadProducts = () => {
-    // Handle undefined category by trying to find the category from the item
-    let actualCategory = category
-    
-    // If category is undefined, try to infer it from common item names
-    if (!category || category === 'undefined') {
-      if (item && item.includes('keychain')) {
-        actualCategory = 'keychains'
-      } else if (item && item.includes('superhero')) {
-        actualCategory = 'superhero'
-      }
-    }
-    
-    // Get all products from the category
-    const categoryProducts = getCategoryProducts(actualCategory)
-    
-    // Convert URL slug back to readable name
-    const readableItemName = item.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
-    setItemName(readableItemName)
-    
-    // Filter products related to the item name
-    let relatedProducts = []
-    
-    // Convert item name to lowercase for matching
-    const itemLower = item.toLowerCase()
-    const readableItemLower = readableItemName.toLowerCase()
-    
-    // Find products that match the item name
-    relatedProducts = categoryProducts.filter(product => {
-      const productNameLower = product.name.toLowerCase()
-      const productDescLower = product.description.toLowerCase()
+  const loadProducts = async () => {
+    try {
+      // Handle undefined category by trying to find the category from the item
+      let actualCategory = category
       
-      // Check if product name or description contains any word from the item
-      return itemLower.split('-').some(word => 
-        productNameLower.includes(word) || productDescLower.includes(word)
-      )
-    })
-    
-    // If no exact matches found, show first 4 products from category
-    if (relatedProducts.length === 0) {
-      relatedProducts = categoryProducts.slice(0, 4)
+      // If category is undefined, try to infer it from common item names
+      if (!category || category === 'undefined') {
+        if (item && item.includes('keychain')) {
+          actualCategory = 'keychains'
+        } else if (item && item.includes('superhero')) {
+          actualCategory = 'superhero'
+        }
+      }
+      
+      // Get all products from backend
+      const response = await apiGet(`/products?category=${actualCategory}&limit=100`)
+      const categoryProducts = response.products || []
+      
+      // Convert URL slug back to readable name
+      const readableItemName = item.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+      setItemName(readableItemName)
+      
+      // Filter products related to the item name
+      let relatedProducts = []
+      
+      // Convert item name to lowercase for matching
+      const itemLower = item.toLowerCase()
+      
+      // Find products that match the item name
+      relatedProducts = categoryProducts.filter(product => {
+        const productNameLower = product.name.toLowerCase()
+        const productDescLower = product.description.toLowerCase()
+        
+        // Check if product name or description contains any word from the item
+        return itemLower.split('-').some(word => 
+          productNameLower.includes(word) || productDescLower.includes(word)
+        )
+      })
+      
+      // If no exact matches found, show first 4 products from category
+      if (relatedProducts.length === 0) {
+        relatedProducts = categoryProducts.slice(0, 4)
+      }
+      
+      setProducts(relatedProducts)
+    } catch (error) {
+      console.error('Failed to load products:', error)
+      setProducts([])
     }
-    
-    setProducts(relatedProducts)
   }
 
-  const addToCart = (product) => {
-    const cart = JSON.parse(localStorage.getItem('cart') || '[]')
-    const existingItemIndex = cart.findIndex(item => item.id === product.id)
-    
-    if (existingItemIndex > -1) {
-      cart[existingItemIndex].quantity += 1
-    } else {
-      cart.push({ ...product, quantity: 1 })
+  const addToCart = async (product) => {
+    try {
+      await apiAddToCart(product.id, 1)
+      setNotification(`${product.name} added to cart!`)
+      setTimeout(() => setNotification(''), 3000)
+      window.dispatchEvent(new Event('cartUpdated'))
+    } catch (error) {
+      console.error('Failed to add to cart:', error)
+      setNotification('Please login to add items to cart')
+      setTimeout(() => setNotification(''), 3000)
     }
-    
-    localStorage.setItem('cart', JSON.stringify(cart))
-    setNotification(`${product.name} added to cart!`)
-    setTimeout(() => setNotification(''), 3000)
-    window.dispatchEvent(new Event('cartUpdated'))
   }
 
   if (!category || !item) {

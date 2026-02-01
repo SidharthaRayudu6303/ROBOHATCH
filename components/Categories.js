@@ -1,31 +1,9 @@
 'use client'
-import { useState, useEffect } from 'react'
-import { getCategoryProducts } from '../data/products'
+import { useState } from 'react'
 import Link from 'next/link'
 
 export default function Categories() {
   const [notification, setNotification] = useState('')
-  const [removedProducts, setRemovedProducts] = useState([])
-  
-  // Load removed products from localStorage
-  useEffect(() => {
-    const loadRemovedProducts = () => {
-      const stored = localStorage.getItem('removedProducts')
-      if (stored) {
-        setRemovedProducts(JSON.parse(stored))
-      }
-    }
-    
-    loadRemovedProducts()
-    
-    // Listen for products update event
-    const handleProductsUpdate = () => {
-      loadRemovedProducts()
-    }
-    
-    window.addEventListener('productsUpdated', handleProductsUpdate)
-    return () => window.removeEventListener('productsUpdated', handleProductsUpdate)
-  }, [])
   
   const categories = [
     { 

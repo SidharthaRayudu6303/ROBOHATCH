@@ -5,7 +5,7 @@ import Navbar from '../../components/Navbar'
 import Footer from '../../components/Footer'
 import Head from 'next/head'
 import Link from 'next/link'
-import { getProductById } from '../../data/products'
+import { apiGet } from '../../lib/api'
 
 export default function ProductDetail() {
   const router = useRouter()
@@ -16,27 +16,35 @@ export default function ProductDetail() {
 
   useEffect(() => {
     if (id) {
-      const productData = getProductById(id)
-      setProduct(productData)
+      loadProduct()
     }
   }, [id])
 
-  const addToCart = () => {
+  const loadProduct = async () => {
+    try {
+      const productData = await apiGet(`/products/${id}`)
+      setProduct(productData)
+    } catch (error) {
+      console.error('Failed to load product:', error)
+      setProduct(null)
+    }
+  }
+
+  const addToCart = async () => {
     if (!product) return
     
-    const cart = JSON.parse(localStorage.getItem('cart') || '[]')
-    const existingItemIndex = cart.findIndex(item => item.id === product.id)
-    
-    if (existingItemIndex > -1) {
-      cart[existingItemIndex].quantity += quantity
-    } else {
-      cart.push({ ...product, quantity })
+    try {
+      // Import addToCart from lib/api will be added via cartHelper
+      const { addToCart: apiAddToCart } = await import('../../lib/api')
+      await apiAddToCart(product.id, quantity)
+      setNotification(`${product.name} added to cart!`)
+      setTimeout(() => setNotification(''), 3000)
+      window.dispatchEvent(new Event('cartUpdated'))
+    } catch (error) {
+      console.error('Failed to add to cart:', error)
+      setNotification('Please login to add items to cart')
+      setTimeout(() => setNotification(''), 3000)
     }
-    
-    localStorage.setItem('cart', JSON.stringify(cart))
-    setNotification(`${product.name} added to cart!`)
-    setTimeout(() => setNotification(''), 3000)
-    window.dispatchEvent(new Event('cartUpdated'))
   }
 
   if (!product) {

@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import Navbar from '../components/Navbar'
-import { allProducts } from '../data/products'
-import { defaultCategories } from '../data/categories'
-import { getAuthToken, removeAuthToken } from '../utils/api'
-import { apiFetch } from '../lib/api'
+import { useAuth } from '../contexts/AuthContext'
+import { apiGet, apiPost, apiPut, apiDelete } from '../lib/api'
 
 export default function Admin() {
   const router = useRouter()
@@ -48,30 +46,48 @@ export default function Admin() {
   const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false)
   const [updateToDelete, setUpdateToDelete] = useState(null)
 
+  const { user, isAuthenticated, logout } = useAuth()
+  const [products, setProducts] = useState([])
+  const [categories, setCategories] = useState([])
+
   // Check authentication and admin access
   useEffect(() => {
-    const token = getAuthToken()
-    const userProfile = localStorage.getItem('userProfile')
-    
-    if (!token) {
+    if (!isAuthenticated) {
       router.push('/login')
       return
     }
 
     // Check if user is admin
-    if (userProfile) {
-      const user = JSON.parse(userProfile)
-      if (user.email !== 'admin@robohatch.com') {
-        router.push('/')
-        return
-      }
-    } else {
-      router.push('/login')
+    if (user?.role !== 'admin' && user?.email !== 'admin@robohatch.com') {
+      router.push('/')
       return
     }
 
+    // Load data from backend
+    loadProducts()
+    loadCategories()
     setIsLoading(false)
-  }, [router])
+  }, [isAuthenticated, user, router])
+
+  const loadProducts = async () => {
+    try {
+      const response = await apiGet('/products?limit=1000')
+      setProducts(response.products || [])
+    } catch (error) {
+      console.error('Failed to load products:', error)
+      setProducts([])
+    }
+  }
+
+  const loadCategories = async () => {
+    try {
+      const response = await apiGet('/categories')
+      setCategories(response.categories || [])
+    } catch (error) {
+      console.error('Failed to load categories:', error)
+      setCategories([])
+    }
+  }
 
   // Load removed products, edits, and custom products from localStorage on mount
   useEffect(() => {
