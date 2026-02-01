@@ -228,7 +228,6 @@ export default function Admin() {
       router.push('/login')
     }
   }
-  }
 
   const handleRemoveProduct = (productId) => {
     const newRemovedProducts = [...removedProducts, productId]
