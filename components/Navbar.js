@@ -1,55 +1,74 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/router'
 import { useAuth } from '../contexts/AuthContext'
 import { getCart } from '../lib/api'
 
-export default function Navbar({ hideLogin = false, hideMenu = false, hideCart = false }) {
+export default function Navbar() {
   const router = useRouter()
-  const { user, isAuthenticated, isLoading: authLoading, logout } = useAuth() // ✅ Single source of truth
+  const { user, isAuthenticated, isLoading: authLoading, logout } = useAuth()
   const [cartCount, setCartCount] = useState(0)
-  const [updates, setUpdates] = useState([])
-  const [currentUpdateIndex, setCurrentUpdateIndex] = useState(0)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const profileDropdownRef = useRef(null)
+  const mobileMenuRef = useRef(null)
 
   useEffect(() => {
-    // Load cart count from backend on mount
+    // 🔒 SECURITY: Load cart count from backend only (no localStorage)
     updateCartCount()
     
-    // Listen for cart updates
+    // Listen for cart updates from other components
     const handleCartUpdate = () => {
       updateCartCount()
     }
     window.addEventListener('cartUpdated', handleCartUpdate)
     
-    // Load updates
-    loadUpdates()
-    
-    // Listen for updates changes
-    const handleUpdatesChange = () => {
-      loadUpdates()
-    }
-    window.addEventListener('updatesChanged', handleUpdatesChange)
-    
     return () => {
       window.removeEventListener('cartUpdated', handleCartUpdate)
-      window.removeEventListener('updatesChanged', handleUpdatesChange)
     }
+  }, [isAuthenticated])
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target)) {
+        setProfileDropdownOpen(false)
+      }
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target)) {
+        const target = event.target
+        // Don't close if clicking the hamburger button
+        if (!target.closest('[data-mobile-toggle]')) {
+          setMobileMenuOpen(false)
+        }
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
+  // Close mobile menu on route change
   useEffect(() => {
-    // Auto-rotate updates every 5 seconds
-    if (updates.length > 1) {
-      const interval = setInterval(() => {
-        setCurrentUpdateIndex((prev) => (prev + 1) % updates.length)
-      }, 5000)
-      return () => clearInterval(interval)
-    }
-  }, [updates.length])
+    setMobileMenuOpen(false)
+    setProfileDropdownOpen(false)
+  }, [router.asPath])
 
-  // ✅ BACKEND CART COUNT - No localStorage
+  // Prevent scroll when mobile menu is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+    return () => {
+      document.body.style.overflow = 'unset'
+    }
+  }, [mobileMenuOpen])
+
+  // ✅ BACKEND CART COUNT - Cookie-based auth, no localStorage
   const updateCartCount = async () => {
     try {
       const cartData = await getCart()
@@ -61,133 +80,396 @@ export default function Navbar({ hideLogin = false, hideMenu = false, hideCart =
     }
   }
 
-  const loadUpdates = () => {
-    if (typeof window !== 'undefined') {
-      const storedUpdates = JSON.parse(localStorage.getItem('siteUpdates') || '[]')
-      const activeUpdates = storedUpdates.filter(update => update.active)
-      setUpdates(activeUpdates)
+  // Handle search submission
+  const handleSearch = (e) => {
+    e.preventDefault()
+    if (searchQuery.trim()) {
+      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`)
+      setSearchQuery('')
     }
   }
 
+  // Handle logout with cleanup
   const handleLogout = async () => {
+    setProfileDropdownOpen(false)
     await logout()
     setCartCount(0)
+    router.push('/')
+  }
+
+  // Get user initials for avatar
+  const getUserInitial = () => {
+    if (!user?.name) return 'U'
+    return user.name.charAt(0).toUpperCase()
   }
 
   return (
     <>
-      <nav className="sticky top-0 bg-white/98 backdrop-blur-md shadow-md z-[1000] transition-all duration-300">
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-5 lg:px-6 xl:px-8">
-          <div className="flex justify-between items-center py-3 sm:py-4">
-            <Link href="/" className="text-base sm:text-2xl md:text-3xl font-extrabold text-black tracking-wide flex items-center gap-2 sm:gap-3 no-underline transition-opacity duration-300 hover:opacity-80">
-              <Image src="/logo.png" alt="ROBOHATCH Logo" width={40} height={40} className="sm:w-[50px] sm:h-[50px] md:w-[55px] md:h-[55px] rounded-full border-2 border-primary-orange p-[5px] bg-white shadow-[0_2px_10px_rgba(242,92,5,0.3)] transition-transform duration-300 hover:scale-105" />
-              <span>ROBOHATCH</span>
+      {/* 🎯 MAIN NAVBAR - Flipkart/Amazon Style */}
+      <nav className="sticky top-0 bg-white shadow-md z-50 border-b border-gray-200">
+        <div className="max-w-[1400px] mx-auto px-4 lg:px-6">
+          <div className="flex items-center justify-between h-16 gap-4">
+            
+            {/* LEFT: Logo */}
+            <Link 
+              href="/" 
+              className="flex items-center gap-2 flex-shrink-0 group"
+            >
+              <Image 
+                src="/logo.png" 
+                alt="ROBOHATCH" 
+                width={40} 
+                height={40} 
+                className="w-10 h-10 rounded-full border-2 border-primary-orange bg-white shadow-sm group-hover:scale-105 transition-transform duration-200"
+              />
+              <span className="text-xl md:text-2xl font-bold text-gray-900 tracking-tight hidden sm:block">
+                ROBO<span className="text-primary-orange">HATCH</span>
+              </span>
             </Link>
-            <div className="flex items-center gap-3 sm:gap-4 md:gap-6">
-              {!hideMenu && (
-                <>
-                  {/* Desktop Menu */}
-                  <ul className="hidden md:flex list-none gap-6 lg:gap-8 xl:gap-10">
-                    <li><Link href="/" className="no-underline text-dark-brown font-medium text-sm lg:text-base xl:text-lg transition-colors duration-300 relative after:content-[''] after:absolute after:bottom-[-5px] after:left-0 after:w-0 after:h-0.5 after:bg-primary-orange after:transition-[width] after:duration-300 hover:text-primary-orange hover:after:w-full">Home</Link></li>
-                    <li><Link href="/#services" className="no-underline text-dark-brown font-medium text-sm lg:text-base xl:text-lg transition-colors duration-300 relative after:content-[''] after:absolute after:bottom-[-5px] after:left-0 after:w-0 after:h-0.5 after:bg-primary-orange after:transition-[width] after:duration-300 hover:text-primary-orange hover:after:w-full">Categories</Link></li>
-                    <li><Link href="/#products" className="no-underline text-dark-brown font-medium text-sm lg:text-base xl:text-lg transition-colors duration-300 relative after:content-[''] after:absolute after:bottom-[-5px] after:left-0 after:w-0 after:h-0.5 after:bg-primary-orange after:transition-[width] after:duration-300 hover:text-primary-orange hover:after:w-full">Products</Link></li>
-                    <li><Link href="/about" className="no-underline text-dark-brown font-medium text-sm lg:text-base xl:text-lg transition-colors duration-300 relative after:content-[''] after:absolute after:bottom-[-5px] after:left-0 after:w-0 after:h-0.5 after:bg-primary-orange after:transition-[width] after:duration-300 hover:text-primary-orange hover:after:w-full">About</Link></li>
-                    <li><Link href="/contact" className="no-underline text-dark-brown font-medium text-sm lg:text-base xl:text-lg transition-colors duration-300 relative after:content-[''] after:absolute after:bottom-[-5px] after:left-0 after:w-0 after:h-0.5 after:bg-primary-orange after:transition-[width] after:duration-300 hover:text-primary-orange hover:after:w-full">Contact</Link></li>
-                    {isAuthenticated && (
-                      <li><Link href="/profile" className="no-underline text-dark-brown font-medium text-sm lg:text-base xl:text-lg transition-colors duration-300 relative after:content-[''] after:absolute after:bottom-[-5px] after:left-0 after:w-0 after:h-0.5 after:bg-primary-orange after:transition-[width] after:duration-300 hover:text-primary-orange hover:after:w-full">Profile</Link></li>
-                    )}
-                  </ul>
-                </>
-              )}
-              <div className="flex items-center gap-3 sm:gap-4">
-              {!hideCart && (
-                <Link href="/cart" className="relative text-dark-brown text-2xl sm:text-[1.3rem] transition-colors duration-300 no-underline hover:text-primary-orange active:scale-90 p-1">
-                  <i className="fas fa-shopping-cart"></i>
-                  <span className="absolute top-[-10px] right-[-12px] bg-gradient-to-br from-primary-orange to-hover-orange text-white rounded-full w-[18px] h-[18px] sm:w-[18px] sm:h-[18px] flex items-center justify-center text-[0.65rem] sm:text-[0.7rem] font-bold shadow-md">{cartCount}</span>
-                </Link>
-              )}
-              {!hideLogin && isAuthenticated && (
-                <Link href="/profile" className="text-dark-brown text-2xl sm:text-[1.3rem] transition-colors duration-300 no-underline hover:text-primary-orange active:scale-90 p-1">
-                  <i className="fas fa-user-circle"></i>
-                </Link>
-              )}
-              {!hideLogin && !isAuthenticated && !authLoading && (
-                <Link href="/login" className="hidden sm:flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-2.5 bg-gradient-to-br from-primary-orange to-hover-orange text-white no-underline rounded-full font-semibold text-sm sm:text-[0.95rem] shadow-[0_4px_15px_rgba(242,92,5,0.3)] transition-all duration-300 relative overflow-hidden before:content-[''] before:absolute before:top-0 before:left-[-100%] before:w-full before:h-full before:bg-gradient-to-r before:from-transparent before:via-white/30 before:to-transparent before:transition-[left] before:duration-500 hover:translate-y-[-2px] hover:shadow-[0_6px_20px_rgba(242,92,5,0.4)] hover:before:left-full active:translate-y-0">
-                  <i className="fas fa-sign-in-alt text-base sm:text-[1.1rem] animate-pulse-custom"></i>
-                  <span>Login</span>
-                </Link>
-              )}
-              {!hideLogin && isAuthenticated && (
-                <button 
-                  onClick={handleLogout}
-                  className="hidden sm:flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-2.5 bg-gradient-to-br from-gray-600 to-gray-700 text-white no-underline rounded-full font-semibold text-sm sm:text-[0.95rem] shadow-[0_4px_15px_rgba(0,0,0,0.2)] transition-all duration-300 hover:translate-y-[-2px] hover:shadow-[0_6px_20px_rgba(0,0,0,0.3)] active:translate-y-0"
-                >
-                  <i className="fas fa-sign-out-alt text-base sm:text-[1.1rem]"></i>
-                  <span>Logout</span>
-                </button>
-              )}
-              {!hideMenu && (
+
+            {/* CENTER: Search Bar (Desktop) */}
+            <form 
+              onSubmit={handleSearch}
+              className="hidden md:flex flex-1 max-w-2xl mx-4"
+            >
+              <div className="relative w-full">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search for keychains, anime merch, gifts..."
+                  className="w-full px-4 py-2.5 pr-12 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-primary-orange transition-colors text-gray-700 placeholder-gray-400"
+                  aria-label="Search products"
+                />
                 <button
-                  className="md:hidden text-dark-brown text-2xl p-2 hover:bg-orange-50 rounded-lg transition-all active:scale-90"
-                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  aria-label="Toggle menu"
+                  type="submit"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-primary-orange text-white px-4 py-1.5 rounded-md hover:bg-hover-orange transition-colors"
+                  aria-label="Submit search"
                 >
-                  <i className={`fas ${mobileMenuOpen ? 'fa-times' : 'fa-bars'}`}></i>
+                  <i className="fas fa-search"></i>
                 </button>
-              )}
-            </div>
-            </div>
-          </div>
-          {/* Mobile Menu Dropdown */}
-          {!hideMenu && mobileMenuOpen && (
-            <div className="md:hidden bg-white border-t border-gray-200 py-4">
-              <ul className="flex flex-col gap-4">
-                <li><Link href="/" className="block no-underline text-dark-brown font-medium text-base py-2 px-4 hover:bg-orange-50 hover:text-primary-orange transition-colors" onClick={() => setMobileMenuOpen(false)}>Home</Link></li>
-                <li><Link href="/#services" className="block no-underline text-dark-brown font-medium text-base py-2 px-4 hover:bg-orange-50 hover:text-primary-orange transition-colors" onClick={() => setMobileMenuOpen(false)}>Categories</Link></li>
-                <li><Link href="/#products" className="block no-underline text-dark-brown font-medium text-base py-2 px-4 hover:bg-orange-50 hover:text-primary-orange transition-colors" onClick={() => setMobileMenuOpen(false)}>Products</Link></li>
-                <li><Link href="/about" className="block no-underline text-dark-brown font-medium text-base py-2 px-4 hover:bg-orange-50 hover:text-primary-orange transition-colors" onClick={() => setMobileMenuOpen(false)}>About</Link></li>
-                <li><Link href="/contact" className="block no-underline text-dark-brown font-medium text-base py-2 px-4 hover:bg-orange-50 hover:text-primary-orange transition-colors" onClick={() => setMobileMenuOpen(false)}>Contact</Link></li>
-                {isAuthenticated && (
-                  <li><Link href="/profile" className="block no-underline text-dark-brown font-medium text-base py-2 px-4 hover:bg-orange-50 hover:text-primary-orange transition-colors" onClick={() => setMobileMenuOpen(false)}><i className="fas fa-user-circle mr-2"></i>My Profile</Link></li>
-                )}
-                {!isAuthenticated && (
-                  <li><Link href="/login" className="block no-underline text-dark-brown font-medium text-base py-2 px-4 hover:bg-orange-50 hover:text-primary-orange transition-colors" onClick={() => setMobileMenuOpen(false)}><i className="fas fa-sign-in-alt mr-2"></i>Login</Link></li>
-                )}
-              </ul>
-            </div>
-          )}
-        </div>
-      </nav>
-      
-      {/* Updates Banner */}
-      {updates.length > 0 && (
-        <div className="bg-gradient-to-r from-primary-orange via-hover-orange to-primary-orange py-2 sm:py-2.5 px-3 sm:px-5 shadow-md overflow-hidden relative">
-          <div className="max-w-[1400px] mx-auto px-4 sm:px-5 lg:px-6 xl:px-8">
-            <div className="flex items-center justify-center gap-2 sm:gap-3 text-white">
-              <i className="fas fa-bullhorn animate-pulse text-sm sm:text-base md:text-lg"></i>
-              <div className="flex-1 text-center overflow-hidden">
-                <p className="m-0 font-medium text-xs sm:text-sm md:text-base lg:text-lg animate-fade-in line-clamp-2">
-                  {updates[currentUpdateIndex]?.message}
-                </p>
               </div>
-              {updates.length > 1 && (
-                <div className="hidden sm:flex gap-1.5">
-                  {updates.map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setCurrentUpdateIndex(index)}
-                      className={`w-2 h-2 rounded-full border-none cursor-pointer transition-all ${
-                        index === currentUpdateIndex ? 'bg-white w-6' : 'bg-white/50 hover:bg-white/75'
-                      }`}
-                      aria-label={`Go to update ${index + 1}`}
-                    />
-                  ))}
+            </form>
+
+            {/* RIGHT: Auth & Cart (Desktop) */}
+            <div className="hidden md:flex items-center gap-4">
+              {/* Loading State - Prevents flickering */}
+              {authLoading && (
+                <div className="flex items-center gap-4">
+                  <div className="w-20 h-8 bg-gray-200 animate-pulse rounded"></div>
+                  <div className="w-10 h-10 bg-gray-200 animate-pulse rounded-full"></div>
                 </div>
               )}
+
+              {/* Guest State - Before Login */}
+              {!authLoading && !isAuthenticated && (
+                <>
+                  <Link
+                    href="/login"
+                    className="px-5 py-2 text-primary-orange border border-primary-orange rounded-md font-medium hover:bg-orange-50 transition-colors"
+                  >
+                    Login
+                  </Link>
+                  <Link
+                    href="/login"
+                    className="px-5 py-2 bg-primary-orange text-white rounded-md font-medium hover:bg-hover-orange transition-colors shadow-sm"
+                  >
+                    Sign Up
+                  </Link>
+                  <Link 
+                    href="/cart" 
+                    className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <i className="fas fa-shopping-cart text-2xl text-gray-700"></i>
+                    {cartCount > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-primary-orange text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                        {cartCount > 9 ? '9+' : cartCount}
+                      </span>
+                    )}
+                  </Link>
+                </>
+              )}
+
+              {/* Authenticated State - After Login */}
+              {!authLoading && isAuthenticated && (
+                <>
+                  {/* Cart Icon with Badge */}
+                  <Link 
+                    href="/cart" 
+                    className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    aria-label={`Cart with ${cartCount} items`}
+                  >
+                    <i className="fas fa-shopping-cart text-2xl text-gray-700"></i>
+                    {cartCount > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-primary-orange text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                        {cartCount > 9 ? '9+' : cartCount}
+                      </span>
+                    )}
+                  </Link>
+
+                  {/* Orders Link */}
+                  <Link
+                    href="/my-orders"
+                    className="px-4 py-2 text-gray-700 font-medium hover:text-primary-orange transition-colors"
+                  >
+                    Orders
+                  </Link>
+
+                  {/* Profile Dropdown */}
+                  <div className="relative" ref={profileDropdownRef}>
+                    <button
+                      onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                      className="flex items-center gap-2 px-3 py-2 hover:bg-gray-100 rounded-lg transition-colors"
+                      aria-label="User menu"
+                      aria-expanded={profileDropdownOpen}
+                    >
+                      <div className="w-9 h-9 bg-primary-orange text-white rounded-full flex items-center justify-center font-bold text-sm">
+                        {getUserInitial()}
+                      </div>
+                      <span className="font-medium text-gray-700 max-w-[100px] truncate">
+                        {user?.name || 'User'}
+                      </span>
+                      <i className={`fas fa-chevron-down text-xs text-gray-500 transition-transform ${profileDropdownOpen ? 'rotate-180' : ''}`}></i>
+                    </button>
+
+                    {/* Dropdown Menu */}
+                    {profileDropdownOpen && (
+                      <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50">
+                        <Link
+                          href="/profile"
+                          className="flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors"
+                          onClick={() => setProfileDropdownOpen(false)}
+                        >
+                          <i className="fas fa-user w-5 text-gray-600"></i>
+                          <span>My Profile</span>
+                        </Link>
+                        <Link
+                          href="/my-orders"
+                          className="flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors"
+                          onClick={() => setProfileDropdownOpen(false)}
+                        >
+                          <i className="fas fa-box w-5 text-gray-600"></i>
+                          <span>My Orders</span>
+                        </Link>
+                        <div className="border-t border-gray-200 my-2"></div>
+                        <button
+                          onClick={handleLogout}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-red-600 hover:bg-red-50 transition-colors"
+                        >
+                          <i className="fas fa-sign-out-alt w-5"></i>
+                          <span>Logout</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Mobile: Search + Hamburger */}
+            <div className="flex md:hidden items-center gap-3">
+              {/* Mobile Search Icon */}
+              <button
+                onClick={() => {
+                  const query = prompt('Search for products:')
+                  if (query?.trim()) {
+                    router.push(`/search?q=${encodeURIComponent(query.trim())}`)
+                  }
+                }}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                aria-label="Search"
+              >
+                <i className="fas fa-search text-xl text-gray-700"></i>
+              </button>
+
+              {/* Mobile Cart Icon */}
+              <Link 
+                href="/cart" 
+                className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <i className="fas fa-shopping-cart text-xl text-gray-700"></i>
+                {cartCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-primary-orange text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                    {cartCount > 9 ? '9+' : cartCount}
+                  </span>
+                )}
+              </Link>
+
+              {/* Hamburger Menu Toggle */}
+              <button
+                data-mobile-toggle
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                aria-label="Toggle menu"
+                aria-expanded={mobileMenuOpen}
+              >
+                <i className={`fas ${mobileMenuOpen ? 'fa-times' : 'fa-bars'} text-xl text-gray-700`}></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      {/* 📱 MOBILE MENU - Bottom Sheet Style */}
+      {mobileMenuOpen && (
+        <div className="md:hidden fixed inset-0 z-40 bg-black/50" onClick={() => setMobileMenuOpen(false)}>
+          <div 
+            ref={mobileMenuRef}
+            className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-2xl max-h-[80vh] overflow-y-auto animate-slide-up"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Mobile Menu Header */}
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-gray-900">Menu</h3>
+              <button
+                onClick={() => setMobileMenuOpen(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                aria-label="Close menu"
+              >
+                <i className="fas fa-times text-xl text-gray-600"></i>
+              </button>
+            </div>
+
+            <div className="p-4">
+              {/* User Info Section - If Authenticated */}
+              {isAuthenticated && user && (
+                <div className="bg-gradient-to-r from-primary-orange to-hover-orange text-white rounded-xl p-4 mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-white text-primary-orange rounded-full flex items-center justify-center font-bold text-lg">
+                      {getUserInitial()}
+                    </div>
+                    <div>
+                      <p className="font-bold text-lg">{user.name}</p>
+                      <p className="text-sm text-white/80">{user.email}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Guest Login Prompt */}
+              {!authLoading && !isAuthenticated && (
+                <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 mb-4">
+                  <p className="text-gray-700 mb-3">Sign in for the best experience</p>
+                  <div className="flex gap-2">
+                    <Link
+                      href="/login"
+                      className="flex-1 text-center px-4 py-2.5 bg-primary-orange text-white rounded-lg font-medium"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Login
+                    </Link>
+                    <Link
+                      href="/login"
+                      className="flex-1 text-center px-4 py-2.5 border-2 border-primary-orange text-primary-orange rounded-lg font-medium"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Sign Up
+                    </Link>
+                  </div>
+                </div>
+              )}
+
+              {/* Menu Links */}
+              <nav className="space-y-1">
+                <Link
+                  href="/"
+                  className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors font-medium"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <i className="fas fa-home w-5 text-gray-600"></i>
+                  <span>Home</span>
+                </Link>
+
+                <Link
+                  href="/#services"
+                  className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors font-medium"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <i className="fas fa-th-large w-5 text-gray-600"></i>
+                  <span>Categories</span>
+                </Link>
+
+                {isAuthenticated && (
+                  <>
+                    <Link
+                      href="/my-orders"
+                      className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors font-medium"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <i className="fas fa-box w-5 text-gray-600"></i>
+                      <span>My Orders</span>
+                    </Link>
+
+                    <Link
+                      href="/profile"
+                      className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors font-medium"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <i className="fas fa-user w-5 text-gray-600"></i>
+                      <span>My Profile</span>
+                    </Link>
+                  </>
+                )}
+
+                <Link
+                  href="/cart"
+                  className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors font-medium"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <i className="fas fa-shopping-cart w-5 text-gray-600"></i>
+                  <span>Cart ({cartCount})</span>
+                </Link>
+
+                <Link
+                  href="/about"
+                  className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors font-medium"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <i className="fas fa-info-circle w-5 text-gray-600"></i>
+                  <span>About</span>
+                </Link>
+
+                <Link
+                  href="/contact"
+                  className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors font-medium"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <i className="fas fa-envelope w-5 text-gray-600"></i>
+                  <span>Contact</span>
+                </Link>
+
+                {isAuthenticated && (
+                  <>
+                    <div className="border-t border-gray-200 my-2"></div>
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors font-medium"
+                    >
+                      <i className="fas fa-sign-out-alt w-5"></i>
+                      <span>Logout</span>
+                    </button>
+                  </>
+                )}
+              </nav>
             </div>
           </div>
         </div>
       )}
+
+      {/* Add animation for mobile menu */}
+      <style jsx>{`
+        @keyframes slide-up {
+          from {
+            transform: translateY(100%);
+          }
+          to {
+            transform: translateY(0);
+          }
+        }
+        .animate-slide-up {
+          animation: slide-up 0.3s ease-out;
+        }
+      `}</style>
     </>
   )
 }
