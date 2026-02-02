@@ -75,7 +75,7 @@ export default function MyOrders() {
     alert('Product reviews will be available in the next update. Thank you for your patience!')
     setShowReviewModal(false)
     return
-
+    
     /* ORIGINAL CODE - TO BE RE-ENABLED IN v1.1.0
     if (!reviewData.comment.trim()) {
       alert('Please write a review comment')
@@ -90,6 +90,11 @@ export default function MyOrders() {
         rating: reviewData.rating,
         comment: reviewData.comment,
       }
+
+      const response = await fetch('/api/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(reviewPayload),
       })
 
       if (!response.ok) {
@@ -104,6 +109,7 @@ export default function MyOrders() {
     } catch (err) {
       alert('Failed to submit review: ' + err.message)
     }
+    */
   }
 
   if (authLoading || isLoading) {
