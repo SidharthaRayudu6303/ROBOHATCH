@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000/api/v1'
+import { apiGet } from '../lib/api'
+import { SHIPMENT_ROUTES, buildApiPath } from '../lib/apiRoutes'
 
 const SHIPMENT_STATUSES = [
   { key: 'PENDING', label: 'Pending', icon: 'fa-clock' },
@@ -27,27 +27,16 @@ export default function ShipmentTracking({ orderId }) {
       setIsLoading(true)
       setError(null)
 
-      const response = await fetch(`${API_BASE_URL}/shipments/order/${orderId}`, {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
-
-      if (response.status === 404) {
-        setShipment(null)
-        return
-      }
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch shipment info')
-      }
-
-      const data = await response.json()
+      // ✅ v1.0.0: GET /orders/:orderId/shipment
+      const data = await apiGet(buildApiPath(SHIPMENT_ROUTES.GET_ORDER_SHIPMENT(orderId)))
       setShipment(data)
     } catch (err) {
-      setError(err.message || 'Failed to load shipment information')
+      // 404 is expected if shipment doesn't exist yet
+      if (err.statusCode === 404) {
+        setShipment(null)
+      } else {
+        setError(err.message || 'Failed to load shipment information')
+      }
     } finally {
       setIsLoading(false)
     }

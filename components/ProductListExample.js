@@ -69,7 +69,7 @@ export default function ProductList({ category = null }) {
           {product.imageUrl ? (
             <div className="aspect-square rounded-lg overflow-hidden mb-3">
               <Image
-                src={product.imageUrl}  {/* ✅ Complete S3 URL from backend */}
+                src={product.imageUrl} // ✅ Complete S3 URL from backend
                 alt={product.name}
                 width={300}
                 height={300}

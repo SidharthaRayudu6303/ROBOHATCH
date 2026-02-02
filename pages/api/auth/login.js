@@ -1,4 +1,6 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000'
+import { AUTH_ROUTES, buildApiPath } from '../../../lib/apiRoutes'
+
+const API = process.env.NEXT_PUBLIC_API_URL || 'https://robohatch-backend-production.up.railway.app'
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -12,7 +14,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Email and password are required' })
     }
 
-    const backendUrl = `${API_BASE_URL}/api/v1/auth/login`
+    const backendUrl = `${API}${buildApiPath(AUTH_ROUTES.LOGIN)}`
 
     const response = await fetch(backendUrl, {
       method: 'POST',

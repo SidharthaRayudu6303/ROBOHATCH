@@ -6,8 +6,8 @@ import Link from 'next/link'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import { useAuth } from '../contexts/AuthContext'
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000/api/v1'
+import { apiGet } from '../lib/api'
+import { ORDER_ROUTES, buildApiPath } from '../lib/apiRoutes'
 
 export default function Orders() {
   const router = useRouter()
@@ -33,19 +33,7 @@ export default function Orders() {
       setIsLoading(true)
       setError(null)
 
-      const response = await fetch(`${API_BASE_URL}/orders`, {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch orders')
-      }
-
-      const data = await response.json()
+      const data = await apiGet(buildApiPath(ORDER_ROUTES.LIST))
       setOrders(data.orders || [])
     } catch (err) {
       setError(err.message || 'Failed to load orders')
@@ -67,8 +55,6 @@ export default function Orders() {
         return 'bg-indigo-100 text-indigo-800 border-indigo-300'
       case 'delivered':
         return 'bg-green-100 text-green-800 border-green-300'
-      case 'cancelled':
-        return 'bg-red-100 text-red-800 border-red-300'
       default:
         return 'bg-gray-100 text-gray-800 border-gray-300'
     }

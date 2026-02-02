@@ -569,7 +569,13 @@ export default function Checkout() {
                             <i className="fas fa-truck text-primary-orange mr-1"></i>
                             Delivery: ₹100.00
                           </p>
-                          <p className="text-sm font-bold text-primary-orange mt-1">₹{(item.price * item.quantity).toFixed(2)}</p>
+                          <p className="text-sm font-bold text-primary-orange mt-1">
+                            {/* 🔒 SECURITY: Use backend-provided lineTotal */}
+                            {item.lineTotal !== undefined 
+                              ? `₹${item.lineTotal.toFixed(2)}`
+                              : '₹—.—'
+                            }
+                          </p>
                         </div>
                       </div>
                     ))}

@@ -1,6 +1,6 @@
 import { useState } from 'react'
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000/api/v1'
+// ⚠️ ADMIN COMPONENT - DISABLED (OPTION B)
+// This component is not currently in use as admin panel is disabled
 
 const STATUS_FLOW = {
   'PENDING': ['PROCESSING'],

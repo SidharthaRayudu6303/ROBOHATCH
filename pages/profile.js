@@ -3,11 +3,12 @@ import Head from 'next/head'
 import { useRouter } from 'next/router'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
-import apiClient from '../utils/apiClient'
-import { apiFetch } from '../lib/api'
+import { useAuth } from '../contexts/AuthContext'
+import { apiGet, apiPut } from '../lib/api'
 
 export default function Profile() {
   const router = useRouter()
+  const { user: authUser, isAuthenticated } = useAuth()
   const [user, setUser] = useState(null)
   const [isEditing, setIsEditing] = useState(false)
   const [orders, setOrders] = useState([])
@@ -18,7 +19,7 @@ export default function Profile() {
     const loadProfile = async () => {
       try {
         // Check authentication
-        if (!apiClient.isAuthenticated()) {
+        if (!isAuthenticated) {
           router.push('/login')
           return
         }
@@ -26,18 +27,20 @@ export default function Profile() {
         setIsLoading(true)
         
         // Fetch user profile from backend
-        const userData = await apiClient.get('/auth/profile')
-        setUser(userData?.data || userData)
+        const userData = await apiGet('/users/profile')
+        setUser(userData)
 
-        // Note: Orders will be fetched from backend in future phase
-        // For now, keep localStorage as fallback
-        const savedOrders = localStorage.getItem('orderHistory')
-        if (savedOrders) {
-          setOrders(JSON.parse(savedOrders))
+        // Fetch order history from backend
+        try {
+          const ordersData = await apiGet('/orders?limit=10')
+          setOrders(ordersData.orders || [])
+        } catch (err) {
+          console.error('Failed to load orders:', err)
+          setOrders([])
         }
       } catch (err) {
         setError(err.message)
-        if (err.message.includes('Unauthorized')) {
+        if (err.statusCode === 401) {
           router.push('/login')
         }
       } finally {
@@ -46,15 +49,13 @@ export default function Profile() {
     }
 
     loadProfile()
-  }, [router])
+  }, [router, isAuthenticated])
 
   const handleSave = async () => {
     try {
-      // Update profile on backend (when endpoint is available)
-      // await apiClient.put('/auth/profile', user)
-      
-      // For now, save to localStorage as fallback
-      localStorage.setItem('userProfile', JSON.stringify(user))
+      // Update profile on backend
+      const updatedUser = await apiPut('/users/profile', user)
+      setUser(updatedUser)
       setIsEditing(false)
       alert('Profile updated successfully!')
     } catch (err) {
@@ -275,10 +276,6 @@ export default function Profile() {
                   <a href="/my-orders" className="flex items-center gap-3 p-3 rounded-lg bg-orange-50 hover:bg-orange-100 transition-colors group">
                     <i className="fas fa-box text-primary-orange text-lg"></i>
                     <span className="text-sm sm:text-base font-medium text-gray-700 group-hover:text-primary-orange">My Orders</span>
-                  </a>
-                  <a href="/cancelled-orders" className="flex items-center gap-3 p-3 rounded-lg bg-red-50 hover:bg-red-100 transition-colors group">
-                    <i className="fas fa-times-circle text-red-600 text-lg"></i>
-                    <span className="text-sm sm:text-base font-medium text-gray-700 group-hover:text-red-600">Cancelled Orders</span>
                   </a>
                   <a href="/cart" className="flex items-center gap-3 p-3 rounded-lg bg-orange-50 hover:bg-orange-100 transition-colors group">
                     <i className="fas fa-shopping-cart text-primary-orange text-lg"></i>

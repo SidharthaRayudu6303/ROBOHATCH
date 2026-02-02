@@ -163,7 +163,13 @@ export default function Cart() {
                           </div>
                           <div className="flex-1 text-right">
                             <label className="text-xs sm:text-sm text-gray-600 block mb-1">Price</label>
-                            <p className="text-2xl sm:text-2xl md:text-3xl font-bold text-primary-orange">₹{(item.price * item.quantity).toFixed(2)}</p>
+                            {/* ⚠️ Cart display only - backend validates before checkout */}
+                            <p className="text-2xl sm:text-2xl md:text-3xl font-bold text-primary-orange">
+                              {item.lineTotal !== undefined 
+                                ? `₹${item.lineTotal.toFixed(2)}`
+                                : `₹${(item.price * item.quantity).toFixed(2)}`
+                              }
+                            </p>
                             <p className="text-xs sm:text-sm text-gray-500">₹{item.price.toFixed(2)} each</p>
                           </div>
                         </div>

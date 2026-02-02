@@ -1,17 +1,112 @@
-// Security utility functions
+/**
+ * Security Utilities for RoboHatch Frontend
+ * CRITICAL: These functions prevent XSS, CSRF, and other attacks
+ */
 
-// XSS Protection - Sanitize user input
+// ============================================================================
+// CSRF PROTECTION (CRITICAL)
+// ============================================================================
+
+/**
+ * Get CSRF token from cookies or meta tag
+ * Token should be set by backend in cookie with name XSRF-TOKEN or X-CSRF-TOKEN
+ */
+export const getCsrfToken = () => {
+  if (typeof document === 'undefined') {
+    return ''
+  }
+  
+  // Try XSRF-TOKEN cookie (Laravel/Axios convention)
+  let match = document.cookie.match(/XSRF-TOKEN=([^;]+)/)
+  if (match) {
+    return decodeURIComponent(match[1])
+  }
+  
+  // Try X-CSRF-TOKEN cookie
+  match = document.cookie.match(/X-CSRF-TOKEN=([^;]+)/)
+  if (match) {
+    return decodeURIComponent(match[1])
+  }
+  
+  // Try CSRF-TOKEN cookie
+  match = document.cookie.match(/CSRF-TOKEN=([^;]+)/)
+  if (match) {
+    return decodeURIComponent(match[1])
+  }
+  
+  // Fallback: Try meta tag
+  const metaTag = document.querySelector('meta[name="csrf-token"]')
+  if (metaTag) {
+    return metaTag.getAttribute('content') || ''
+  }
+  
+  return ''
+}
+
+// ============================================================================
+// XSS PROTECTION (CRITICAL)
+// ============================================================================
+
+/**
+ * Sanitize user input to prevent XSS attacks
+ * Use for displaying user-generated content
+ */
 export const sanitizeInput = (input) => {
   if (typeof input !== 'string') return input
   
   return input
-    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-    .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
-    .replace(/javascript:/gi, '')
-    .replace(/onerror=/gi, '')
-    .replace(/onclick=/gi, '')
-    .replace(/onload=/gi, '')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+    .replace(/\//g, '&#x2F;')
     .trim()
+}
+
+/**
+ * Sanitize URL to prevent XSS and open redirect attacks
+ * Only allows http/https protocols
+ */
+export const sanitizeUrl = (url) => {
+  if (!url) {
+    return process.env.NEXT_PUBLIC_SITE_URL || '/'
+  }
+  
+  try {
+    const parsed = new URL(url, process.env.NEXT_PUBLIC_SITE_URL || 'https://robohatch.com')
+    
+    // Only allow http and https protocols
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+      console.warn(`🔒 Blocked suspicious URL protocol: ${parsed.protocol}`)
+      return process.env.NEXT_PUBLIC_SITE_URL || '/'
+    }
+    
+    return parsed.toString()
+  } catch (error) {
+    console.error('🔒 Invalid URL detected and blocked:', url)
+    return process.env.NEXT_PUBLIC_SITE_URL || '/'
+  }
+}
+
+/**
+ * Escape JSON for safe embedding in HTML
+ * Prevents </script> injection attacks in JSON-LD
+ */
+export const escapeJsonForHtml = (obj) => {
+  return JSON.stringify(obj)
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/&/g, '\\u0026')
+}
+
+/**
+ * Sanitize email address
+ */
+export const sanitizeEmail = (email) => {
+  if (!email || typeof email !== 'string') {
+    return ''
+  }
+  return email.toLowerCase().trim()
 }
 
 // SQL Injection Protection - Validate inputs
@@ -70,7 +165,21 @@ export const checkRateLimit = (identifier, maxAttempts = 5, windowMs = 15 * 60 *
   return { allowed: true, remaining: maxAttempts - record.attempts }
 }
 
-// CSRF Protection - Generate and validate tokens
+// ============================================================================
+// IDEMPOTENCY KEYS (PAYMENT SAFETY)
+// ============================================================================
+
+/**
+ * Generate idempotency key for order/payment creation
+ * Prevents duplicate charges on retry
+ */
+export const generateIdempotencyKey = (prefix = 'req') => {
+  const timestamp = Date.now()
+  const random = Math.random().toString(36).substring(2, 15)
+  return `${prefix}-${timestamp}-${random}`
+}
+
+// CSRF Token Generation (for testing - production should use backend)
 export const generateCSRFToken = () => {
   return Math.random().toString(36).substring(2, 15) + 
          Math.random().toString(36).substring(2, 15) +

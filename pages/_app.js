@@ -2,10 +2,12 @@ import '@/styles/globals.css'
 import { useEffect, useState, Component } from 'react'
 import LoadingScreen from '@/components/LoadingScreen'
 import { AuthProvider } from '@/contexts/AuthContext'
+import * as Sentry from '@sentry/nextjs'
 
 /**
  * Global Error Boundary - Catches all React errors
  * Prevents white screen of death in production
+ * Integrated with Sentry error monitoring
  */
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -20,8 +22,14 @@ class ErrorBoundary extends Component {
   componentDidCatch(error, errorInfo) {
     console.error('🚨 Error Boundary caught:', error, errorInfo)
     
-    // TODO: Send to error monitoring (Sentry, LogRocket, etc.)
-    // Example: Sentry.captureException(error, { contexts: { react: { componentStack: errorInfo.componentStack } } })
+    // ✅ Send to Sentry error monitoring
+    Sentry.captureException(error, {
+      contexts: {
+        react: {
+          componentStack: errorInfo.componentStack,
+        },
+      },
+    })
     
     this.setState({ errorInfo })
   }

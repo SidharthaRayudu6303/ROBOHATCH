@@ -6,8 +6,8 @@ import Link from 'next/link'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import { useAuth } from '../contexts/AuthContext'
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000/api/v1'
+import { apiGet } from '../lib/api'
+import { ORDER_ROUTES, buildApiPath } from '../lib/apiRoutes'
 
 export default function MyOrders() {
   const router = useRouter()
@@ -33,19 +33,7 @@ export default function MyOrders() {
       setIsLoading(true)
       setError(null)
 
-      const response = await fetch(`${API_BASE_URL}/orders`, {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch orders')
-      }
-
-      const data = await response.json()
+      const data = await apiGet(buildApiPath(ORDER_ROUTES.LIST))
       setOrders(data.orders || [])
     } catch (err) {
       setError(err.message || 'Failed to load orders')
@@ -67,8 +55,6 @@ export default function MyOrders() {
         return 'bg-indigo-100 text-indigo-800 border-indigo-300'
       case 'delivered':
         return 'bg-green-100 text-green-800 border-green-300'
-      case 'cancelled':
-        return 'bg-red-100 text-red-800 border-red-300'
       default:
         return 'bg-gray-100 text-gray-800 border-gray-300'
     }
@@ -83,80 +69,41 @@ export default function MyOrders() {
     })
   }
 
-  const handleCancelOrder = (orderId) => {
-    setOrderToCancel(orderId)
-    setShowCancelModal(true)
-  }
+  const handleReviewSubmit = async () => {
+    // ❌ DEFERRED TO v1.1.0+
+    // Reviews are not available in v1.0.0 backend
+    alert('Product reviews will be available in the next update. Thank you for your patience!')
+    setShowReviewModal(false)
+    return
 
-  const confirmCancelOrder = () => {
-    if (orderToCancel) {
-      const orderHistory = JSON.parse(localStorage.getItem('orderHistory') || '[]')
-      const updatedOrders = orderHistory.map(order => 
-        order.id === orderToCancel ? { ...order, status: 'Cancelled' } : order
-      )
-      localStorage.setItem('orderHistory', JSON.stringify(updatedOrders))
-      
-      // Also update in orders
-      const allOrders = JSON.parse(localStorage.getItem('orders') || '[]')
-      const updatedAllOrders = allOrders.map(order => 
-        order.id === orderToCancel ? { ...order, status: 'Cancelled' } : order
-      )
-      localStorage.setItem('orders', JSON.stringify(updatedAllOrders))
-      
-      loadOrders()
-      setShowCancelModal(false)
-      setOrderToCancel(null)
-    }
-  }
-
-  const handleReviewSubmit = () => {
+    /* ORIGINAL CODE - TO BE RE-ENABLED IN v1.1.0
     if (!reviewData.comment.trim()) {
       alert('Please write a review comment')
       return
     }
 
-    const review = {
-      id: Date.now(),
-      orderId: selectedOrder.id,
-      productId: reviewProduct.id,
-      productName: reviewProduct.name,
-      productImage: reviewProduct.image,
-      rating: reviewData.rating,
-      comment: reviewData.comment,
-      date: new Date().toLocaleDateString('en-IN', { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-      }),
-      customerName: selectedOrder.customer,
-      customerEmail: selectedOrder.email
-    }
-
-    // Save review
-    const reviews = JSON.parse(localStorage.getItem('reviews') || '[]')
-    reviews.push(review)
-    localStorage.setItem('reviews', JSON.stringify(reviews))
-
-    // Mark product as reviewed in order
-    const orderHistory = JSON.parse(localStorage.getItem('orderHistory') || '[]')
-    const updatedOrders = orderHistory.map(order => {
-      if (order.id === selectedOrder.id) {
-        return {
-          ...order,
-          items: order.items.map(item => 
-            item.id === reviewProduct.id ? { ...item, reviewed: true } : item
-          )
-        }
+    try {
+      // Submit review to backend - POST /reviews
+      const reviewPayload = {
+        orderId: selectedOrder.id,
+        productId: reviewProduct.id,
+        rating: reviewData.rating,
+        comment: reviewData.comment,
       }
-      return order
-    })
-    localStorage.setItem('orderHistory', JSON.stringify(updatedOrders))
+      })
 
-    loadOrders()
-    setShowReviewModal(false)
-    setReviewData({ rating: 5, comment: '' })
-    setReviewProduct(null)
-    alert('Thank you for your review!')
+      if (!response.ok) {
+        throw new Error('Failed to submit review')
+      }
+
+      alert('Review submitted successfully!')
+      // Reset form and close modal
+      setShowReviewModal(false)
+      setReviewData({ rating: 5, comment: '' })
+      setReviewProduct(null)
+    } catch (err) {
+      alert('Failed to submit review: ' + err.message)
+    }
   }
 
   if (authLoading || isLoading) {

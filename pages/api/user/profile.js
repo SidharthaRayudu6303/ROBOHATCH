@@ -1,4 +1,6 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000'
+import { USER_ROUTES, buildApiPath } from '../../../lib/apiRoutes'
+
+const API = process.env.NEXT_PUBLIC_API_URL || 'https://robohatch-backend-production.up.railway.app'
 
 export default async function handler(req, res) {
   const backendUrl = `${API_BASE_URL}/api/v1/user/profile`

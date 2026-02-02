@@ -2,12 +2,12 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import Head from 'next/head'
+import Script from 'next/script'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import { useAuth } from '../contexts/AuthContext'
-import { loadRazorpay } from '../utils/razorpay'
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000/api/v1'
+import { apiGet, apiPost } from '../lib/api'
+import { ORDER_ROUTES, PAYMENT_ROUTES, buildApiPath } from '../lib/apiRoutes'
 
 export default function Payment() {
   const router = useRouter()
@@ -17,6 +17,7 @@ export default function Payment() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
   const [paymentStatus, setPaymentStatus] = useState(null)
+  const [razorpayLoaded, setRazorpayLoaded] = useState(false)
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -35,19 +36,7 @@ export default function Payment() {
       setIsLoading(true)
       setError(null)
 
-      const response = await fetch(`${API_BASE_URL}/orders/${orderId}`, {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch order details')
-      }
-
-      const data = await response.json()
+      const data = await apiGet(buildApiPath(ORDER_ROUTES.GET(orderId)))
       setOrderDetails(data)
     } catch (err) {
       setError(err.message || 'Failed to load order details')
@@ -60,33 +49,20 @@ export default function Payment() {
     try {
       setError(null)
 
-      const razorpayLoaded = await loadRazorpay()
-      if (!razorpayLoaded) {
-        throw new Error('Failed to load Razorpay SDK')
+      // Check if Razorpay SDK is loaded
+      if (!razorpayLoaded || typeof window.Razorpay === 'undefined') {
+        throw new Error('Razorpay SDK not loaded. Please refresh the page.')
       }
 
-      const response = await fetch(`${API_BASE_URL}/payments/initiate`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ orderId }),
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to initiate payment')
-      }
-
-      const paymentData = await response.json()
+      const paymentData = await apiPost(buildApiPath(PAYMENT_ROUTES.INITIATE), { orderId })
 
       const options = {
-        key: paymentData.key_id,
-        amount: paymentData.amount,
+        key: paymentData.key_id, // ✅ Razorpay PUBLIC key (safe to expose)
+        amount: paymentData.amount, // ✅ Amount from backend
         currency: paymentData.currency,
         name: 'ROBOHATCH',
         description: `Order #${orderId}`,
-        order_id: paymentData.razorpay_order_id,
+        order_id: paymentData.razorpay_order_id, // ✅ Backend-created order ID
         prefill: {
           name: user?.name || '',
           email: user?.email || '',
@@ -100,7 +76,7 @@ export default function Payment() {
         },
         modal: {
           ondismiss: function () {
-            setError('Payment was cancelled. Please try again.')
+            setError('Payment window was closed. Please try again.')
           },
         },
       }
@@ -130,6 +106,13 @@ export default function Payment() {
         <Head>
           <title>Payment - ROBOHATCH</title>
         </Head>
+        {/* 🔒 SECURITY: Load Razorpay SDK with Next.js Script component */}
+        <Script
+          src="https://checkout.razorpay.com/v1/checkout.js"
+          strategy="lazyOnload"
+          onLoad={() => setRazorpayLoaded(true)}
+          onError={() => console.error('❌ Failed to load Razorpay SDK')}
+        />
         <Navbar />
         <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12">
           <div className="text-center">
@@ -216,6 +199,14 @@ export default function Payment() {
       <Head>
         <title>Payment - ROBOHATCH</title>
       </Head>
+      
+      {/* 🔒 SECURITY: Load Razorpay SDK with Next.js Script component */}
+      <Script
+        src="https://checkout.razorpay.com/v1/checkout.js"
+        strategy="lazyOnload"
+        onLoad={() => setRazorpayLoaded(true)}
+        onError={() => console.error('❌ Failed to load Razorpay SDK')}
+      />
       <Navbar />
       <div className="min-h-screen bg-gradient-to-br from-orange-50/40 via-white to-amber-50/30 py-12">
         <div className="max-w-2xl mx-auto px-4">
@@ -252,8 +243,11 @@ export default function Payment() {
                           <h3 className="font-semibold text-gray-900">{item.name}</h3>
                           <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
                           <p className="text-sm font-bold text-primary-orange mt-1">
-                            {/* TODO: Backend should provide item.lineTotal */}
-                            ₹{item.lineTotal ? item.lineTotal.toFixed(2) : (item.price * item.quantity).toFixed(2)}
+                            {/* 🔒 SECURITY: Never calculate prices on client */}
+                            {item.lineTotal !== undefined 
+                              ? `₹${item.lineTotal.toFixed(2)}`
+                              : '₹—.—' /* Backend must provide lineTotal */
+                            }
                           </p>
                         </div>
                       </div>
