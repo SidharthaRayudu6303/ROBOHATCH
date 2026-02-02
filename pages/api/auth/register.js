@@ -15,8 +15,6 @@ export default async function handler(req, res) {
     }
 
     const backendUrl = `${process.env.BACKEND_BASE_URL}/api/v1/auth/register`
-    console.log('Registering user at:', backendUrl)
-    console.log('Request body:', { email, password: '***', ...(name && { name }) })
 
     // Send only email and password to match backend expectation
     const requestBody = { email, password }
@@ -36,8 +34,6 @@ export default async function handler(req, res) {
     })
 
     const data = await response.json().catch(() => ({}))
-    console.log('Backend response status:', response.status)
-    console.log('Backend response data:', data)
 
     if (!response.ok) {
       return res.status(response.status).json({ error: data?.error || data?.message || 'Registration failed' })

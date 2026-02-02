@@ -48,8 +48,7 @@ export default function CustomPrinting() {
   const handleSubmit = (e) => {
     e.preventDefault();
     // Here you would typically send the data to your backend
-    console.log('Form Data:', formData);
-    console.log('Uploaded File:', uploadedFile);
+    // TODO: Send formData and uploadedFile to backend API
     setSubmitted(true);
     
     // Reset form after 3 seconds

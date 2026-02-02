@@ -91,8 +91,27 @@ export default function Payment() {
     }
   }
 
-  const handlePaymentSuccess = (response) => {
-    setPaymentStatus('success')
+  const handlePaymentSuccess = async (response) => {
+    try {
+      // 🔒 SECURITY: Verify payment with backend before showing success
+      setError(null)
+      const verificationData = await apiPost(buildApiPath(PAYMENT_ROUTES.VERIFY || '/payments/verify'), {
+        orderId,
+        razorpay_order_id: response.razorpay_order_id,
+        razorpay_payment_id: response.razorpay_payment_id,
+        razorpay_signature: response.razorpay_signature
+      })
+      
+      if (verificationData.success) {
+        setPaymentStatus('success')
+      } else {
+        setPaymentStatus('failed')
+        setError('Payment verification failed. Please contact support.')
+      }
+    } catch (err) {
+      setPaymentStatus('failed')
+      setError('Payment verification error. Please contact support with order ID: ' + orderId)
+    }
   }
 
   const handlePaymentFailure = (response) => {

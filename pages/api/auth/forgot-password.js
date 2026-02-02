@@ -10,7 +10,6 @@ export default async function handler(req, res) {
     }
 
     const backendUrl = `${process.env.BACKEND_BASE_URL}/api/v1/auth/forgot-password`
-    console.log('Forgot password request to:', backendUrl)
 
     const response = await fetch(backendUrl, {
       method: 'POST',
@@ -21,10 +20,8 @@ export default async function handler(req, res) {
     })
 
     const data = await response.json().catch(() => ({}))
-    console.log('Forgot password response status:', response.status)
 
     if (!response.ok) {
-      console.log('Forgot password failed:', data)
       return res.status(response.status).json({ error: data?.error || data?.message || 'Failed to send reset email' })
     }
 
